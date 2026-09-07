@@ -901,8 +901,10 @@ save/load validation is integrated on `main` at `6ab67f1`.
 PR476 status: independent restart-equivalence, version-mismatch, corruption
 and idempotence QA is integrated on `main` at `725b02a`.
 PR477 status: Dash Selection Evidence/Portfolio Diagnostics separation and
-persisted ranking read-model rendering are prepared on the implementation
-branch; merge before beginning PR478.
+persisted ranking read-model rendering are integrated on `main` at `d5516ea`.
+PR478 status: browser/read-model QA for all objectives, stale readiness,
+winner diagnostics and console safety is prepared on the QA branch; merge
+before beginning PR479.
 
 ### Corrective migration execution index (PR461–PR480)
 
