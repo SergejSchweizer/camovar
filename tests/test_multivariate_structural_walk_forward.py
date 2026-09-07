@@ -165,7 +165,7 @@ def test_structural_evidence_reuses_exact_oos_metrics_and_is_deterministic() -> 
     assert [row.post_cost_return for row in first] == [0.011, -0.007]
     assert all(row.train_end < row.test_start for row in first)
     assert all(row.risk_model_contract_version == "multivariate.risk_model@v1" for row in first)
-    assert all(row.candidate_contract_version == "multivariate.candidates@v7" for row in first)
+    assert all(row.candidate_contract_version == "multivariate.candidates@v8" for row in first)
     assert all(row.structure_contract_version == "multivariate.structure@v3" for row in first)
     assert all(
         row.effective_pca_risk_drivers is None or row.effective_pca_risk_drivers >= 1.0

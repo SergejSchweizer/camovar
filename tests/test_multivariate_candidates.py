@@ -11,7 +11,6 @@ from portfell.multivariate_candidates import (
     _aligned_matrix,  # pyright: ignore[reportPrivateUsage]
     _average_calendar_returns,  # pyright: ignore[reportPrivateUsage]
     _diversification_ratio,  # pyright: ignore[reportPrivateUsage]
-    _highest_monthly_return_weights,  # pyright: ignore[reportPrivateUsage]
     _return_and_drawdown,  # pyright: ignore[reportPrivateUsage]
     _weights,  # pyright: ignore[reportPrivateUsage]
     build_candidate_set,
@@ -163,46 +162,6 @@ def test_candidate_realized_returns_match_weighted_simple_return_performance() -
     assert equal_weight.total_return == pytest.approx(0.20)
     assert equal_weight.average_monthly_return == pytest.approx(0.20)
     assert equal_weight.total_return == pytest.approx(performance[-1]["return"])
-
-
-def test_highest_monthly_return_weights_maximize_mean_compounded_monthly_return() -> None:
-    keys = tuple(key.as_tuple() for key in _keys()[:2])
-    rows = [
-        {
-            "isin": keys[0][0],
-            "exchange": keys[0][1],
-            "code": keys[0][2],
-            "date": "2025-01-02",
-            "return": 0.10,
-        },
-        {
-            "isin": keys[0][0],
-            "exchange": keys[0][1],
-            "code": keys[0][2],
-            "date": "2025-01-03",
-            "return": 0.10,
-        },
-        {
-            "isin": keys[1][0],
-            "exchange": keys[1][1],
-            "code": keys[1][2],
-            "date": "2025-01-02",
-            "return": 0.15,
-        },
-        {
-            "isin": keys[1][0],
-            "exchange": keys[1][1],
-            "code": keys[1][2],
-            "date": "2025-01-03",
-            "return": 0.00,
-        },
-    ]
-
-    weights = _highest_monthly_return_weights(
-        keys, rows, MonthlyDistributionEtfPortfolioPolicy(max_weight=0.6)
-    )
-
-    assert weights == pytest.approx((0.6, 0.4))
 
 
 def test_average_calendar_returns_compound_before_averaging() -> None:

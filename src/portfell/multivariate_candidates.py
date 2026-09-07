@@ -11,7 +11,7 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from concurrent.futures import Executor
 from dataclasses import dataclass
-from math import exp, log1p, sqrt
+from math import exp, sqrt
 from typing import Any
 
 from portfell.contract_versioning import ContractVersion, stable_contract_id
@@ -37,7 +37,7 @@ from portfell.portfolio_parts.solvers import (
     solve_minimum_variance,
 )
 
-CANDIDATE_CONTRACT = ContractVersion("multivariate.candidates", 7)
+CANDIDATE_CONTRACT = ContractVersion("multivariate.candidates", 8)
 MAX_WALK_FORWARD_SOLVER_ITERATIONS = 500
 # The solver's projected-gradient step includes a capped-simplex projection;
 # the old 100k limit made each of up to 24 walk-forward refits effectively
@@ -52,7 +52,6 @@ METHODS = (
     "equal_risk_contribution",
     "hierarchical_risk_parity",
     "minimum_cvar",
-    "highest_monthly_return",
 )
 BASELINE_METHODS = frozenset({"equal_weight", "inverse_volatility"})
 
@@ -334,48 +333,7 @@ def _weights(
         if not outcome.converged:
             raise ValueError("minimum_cvar_solver_not_converged")
         return outcome.weights
-    if method == "highest_monthly_return":
-        return _highest_monthly_return_weights(keys, rows, policy)
     raise ValueError("unsupported_candidate_method")
-
-
-def _highest_monthly_return_weights(
-    keys: tuple[tuple[str, str, str], ...],
-    rows: Sequence[Mapping[str, Any]],
-    policy: MonthlyDistributionEtfPortfolioPolicy,
-) -> tuple[float, ...]:
-    indexed: dict[tuple[str, str, str], dict[str, float]] = {}
-    for row in rows:
-        key = (str(row["isin"]), str(row["exchange"]), str(row["code"]))
-        indexed.setdefault(key, {})[str(row["date"])] = _log_return(row)
-    if not keys or any(key not in indexed for key in keys):
-        raise ValueError("incomplete_aligned_return_history")
-    common_dates = set(indexed[keys[0]])
-    for key in keys[1:]:
-        common_dates &= set(indexed[key])
-    if len(common_dates) < 2:
-        raise ValueError("insufficient_aligned_return_history")
-    scores = [
-        _mean_monthly_return({date: indexed[key][date] for date in common_dates}) for key in keys
-    ]
-    weights = [policy.min_weight] * len(keys)
-    remaining = 1 - sum(weights)
-    for index in sorted(range(len(keys)), key=lambda item: (-scores[item], keys[item])):
-        allocation = min(policy.max_weight - policy.min_weight, remaining)
-        weights[index] += allocation
-        remaining -= allocation
-        if remaining <= 1e-12:
-            break
-    return tuple(weights)
-
-
-def _mean_monthly_return(log_returns: Mapping[str, float]) -> float:
-    """Return the mean compounded monthly return from chronologically grouped logs."""
-    monthly: dict[str, float] = {}
-    for date, value in log_returns.items():
-        month = date[:7]
-        monthly[month] = monthly.get(month, 0.0) + value
-    return sum(exp(value) - 1 for value in monthly.values()) / len(monthly)
 
 
 def _metrics(
@@ -510,14 +468,6 @@ def _aligned_dates_and_matrix(
 def _simple_return(row: Mapping[str, Any]) -> float:
     value = row.get("simple_return")
     return float(value) if value is not None else exp(float(row.get("return", 0))) - 1.0
-
-
-def _log_return(row: Mapping[str, Any]) -> float:
-    value = row.get("return")
-    if value is not None:
-        return float(value)
-    simple_return = float(row.get("simple_return", 0))
-    return log1p(simple_return)
 
 
 def _average_calendar_returns(
