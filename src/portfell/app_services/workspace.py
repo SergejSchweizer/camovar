@@ -1143,7 +1143,11 @@ class WorkspaceApplicationService:
     def multivariate_artifact(self, run_id: str, artifact_type: str) -> JsonRow:
         """Read one named Multivariate artifact on demand."""
         run = self._require_succeeded_run(run_id, "multivariate")
-        return cast(JsonRow, self._artifact(run.run_id, artifact_type).document)
+        document = cast(JsonRow, self._artifact(run.run_id, artifact_type).document)
+        # Runs created before the allocator contract was frozen can remain in
+        # PostgreSQL for audit.  They must never leak a retired allocator into
+        # the current read plane after deployment.
+        return _without_retired_allocator(document, artifact_type)
 
     def stage_history(self, stage: str, *, limit: int = 100) -> tuple[JsonRow, ...]:
         return tuple(
@@ -1734,6 +1738,28 @@ def _selection_row(item: UnivariateSelectionRecord) -> JsonRow:
             for member in item.members
         ],
     }
+
+
+def _without_retired_allocator(document: JsonRow, artifact_type: str) -> JsonRow:
+    """Hide pre-contract allocator rows while retaining historical artifacts."""
+    retired = "highest_monthly_return"
+    cleaned = dict(document)
+    if artifact_type in {"candidates", "validation", "risk_contributions"}:
+        items = cleaned.get("items")
+        if isinstance(items, list):
+            cleaned["items"] = [
+                item for item in items
+                if not isinstance(item, Mapping) or item.get("method") != retired
+            ]
+    if artifact_type == "performance":
+        for key in ("portfolio_series", "period_returns"):
+            items = cleaned.get(key)
+            if isinstance(items, list):
+                cleaned[key] = [
+                    item for item in items
+                    if not isinstance(item, Mapping) or item.get("method") != retired
+                ]
+    return cleaned
 
 
 def _run_row(item: AnalysisRunRecord) -> JsonRow:
