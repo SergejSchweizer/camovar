@@ -862,6 +862,51 @@ needs a measured split-local 14-configuration OOS implementation. The complete
 atomic migration plan, acceptance criteria and QA evidence contract are in
 [PORTFOLIO_SELECTION_V2_MIGRATION.md](PORTFOLIO_SELECTION_V2_MIGRATION.md).
 
+### Canonical Portfolio Selection v2 migration specification
+
+The migration specification is merged into this backlog as the executable
+authority. The linked Markdown sidecar remains a readable copy, but a PR is not
+complete unless the requirements below and its row in the execution index are
+met on the exact merged head.
+
+#### Frozen production workflow
+
+`current Univariate selection -> matching successful Bivariate evidence -> requested objective -> 14 semantic allocator/risk-spec configurations -> one common chronological OOS schedule -> split-local risk-model fits -> split-local portfolio refits -> common-split validation -> deterministic objective ranking -> Decision v2 -> full-current-sample refit of the exact 14-family -> winning fitted portfolio -> descriptive diagnostics`.
+
+The only production objectives are `return_risk`, `return_drawdown`, and
+`minimum_risk`. The semantic family is exactly six allocator methods and
+fourteen configurations: Equal Weight (`LW_FULL`); Inverse Volatility,
+Minimum Variance, Equal Risk Contribution and Hierarchical Risk Parity with
+`LW_FULL`, `LW_ROLLING_252` and `EWMA_094`; and Minimum CVaR (`LW_FULL`).
+
+The common OOS policy is immutable: 252 training observations, 21-observation
+test windows, at most eight refits and at least two completed common splits.
+Every configuration uses identical chronological windows. Risk fits are
+training-only, with at most one shared fit per risk specification per split;
+unavailable fits/configurations remain persisted and unrankable. Full-sample
+evidence is descriptive only and can never enter ranking.
+
+#### Required migration evidence
+
+Each QA stage must emit a sanitized
+`portfolio-selection-v2-migration@v1` record containing the exact Git SHA,
+stage/ordinal, implementation and QA PR references, authority, configuration
+count, policy fingerprint, split-local fit/candidate status, measured OOS and
+ranking status, Decision and lineage joins, checkpoint compatibility, Dash
+read-model status, focused gate references, and sanitized failure reasons.
+Evidence must contain no credentials, DSNs, private paths or raw market rows.
+
+#### Completion gate
+
+Selection v2 is not considered complete until PR480 produces a PASS artifact on
+the exact final runtime head. The closeout must independently verify numerical
+oracles, leakage/future-data invariance, deterministic tie-breaks, all three
+objectives, unavailable/ineligible handling without fallback, exact
+Decision-to-candidate/risk/performance lineage, clean/resumed artifact
+equivalence, persisted Selection Evidence rendering, retirement of legacy
+authority, and the repository/GitHub merge gates. Defects found by a QA PR
+require a separate corrective implementation PR and a fresh QA run.
+
 Git status: PR460 merged on `main` at `79b16e8`; its planning document is now
 part of the repository. PR461–PR480 are the next executable work orders and
 must be completed linearly before Selection v2 can be declared final.
