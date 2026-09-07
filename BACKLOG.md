@@ -176,6 +176,8 @@ Acceptance:
 - objective selection, evidence-role separation and no-winner semantics are explicit workflow contracts;
 - no production source/test behavior changes.
 
+Git status: integrated on `main` at `3deb1a0`; the reconciled PR437–PR459 execution backlog is the sole active planning authority.
+
 ### PR438 — Remove `highest_monthly_return` completely
 
 Branch: `refactor/pr438-remove-highest-monthly-return`
