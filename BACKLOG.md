@@ -437,6 +437,11 @@ Task: run `git grep` first. If a live production import exists, stop and amend t
 
 Acceptance: no production import/reference to retired scorecard; no compatibility wrapper; no financial behavior change beyond removing duplicate authority.
 
+Git status: integrated on `main` at `18a3acf`; the retired standalone
+`scorecard.py` authority and dedicated tests were deleted, legacy callers now
+report no scorecard rank, and canonical Multivariate validation remains the
+only production ranking path.
+
 ### PR448 — Remove false covariance/correlation return-path stress labels
 
 Branch: `fix/pr448-remove-false-risk-stress-labels`
