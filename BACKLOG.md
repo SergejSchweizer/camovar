@@ -24,7 +24,7 @@ Current Multivariate baseline at the review SHA:
 - `multivariate.validation@v10`;
 - `multivariate.risk_model@v1`;
 - `multivariate.structural_walk_forward@v1`;
-- `MULTIVARIATE_EXECUTION_VERSION = multivariate_execution.clean.v8`;
+- `MULTIVARIATE_EXECUTION_VERSION = multivariate_execution.clean.v9`;
 - production covariance estimator is Ledoit-Wolf with `window_policy=full`;
 - production candidate methods are `equal_weight`, `inverse_volatility`, `minimum_variance`, `equal_risk_contribution`, `hierarchical_risk_parity`, `minimum_cvar`;
 - walk-forward policy is minimum training 100 observations, test window 21 observations, maximum 8 refits, minimum 2 completed splits, transaction-cost rate 0.0005;
@@ -389,6 +389,10 @@ Owned paths: Multivariate decision logic and focused decision tests.
 Task: set `return_drawdown` primary score exactly to `median_return_drawdown_ratio`; delete ratio-of-aggregate-return-to-aggregate-drawdown ranking logic.
 
 Acceptance: independent fixture proves same-split-before-median semantics; Decision persists `objective_metric = median_return_drawdown_ratio`; execution `clean.v8 -> clean.v9`.
+
+Git status: integrated on `main` at `fa891a2`; `return_drawdown` now ranks by
+the persisted median of same-split post-cost-return/drawdown ratios. Zero or
+missing drawdown remains unrankable. Focused decision tests pass.
 
 ### PR446 — Freeze deterministic stability tie-breaks
 
