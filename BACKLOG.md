@@ -7,7 +7,7 @@ Last reviewed: 2026-09-07
 `BACKLOG.md` is the only executable backlog authority for Portfell. Historical backlog text, old pull-request descriptions and archived planning branches are audit material only when they conflict with this file.
 
 This revision is reconciled against the exact current `main` commit
-`5bc2cee9a678564db9c50797e7fccd68d9ce776b` (Portfolio Selection v2 closeout).
+`cf0645402482343eecd13171ff16e52403644217` (Portfolio Selection v2 closeout).
 Earlier planning revisions remain recoverable from Git history and are not
 executable after this revision.
 
