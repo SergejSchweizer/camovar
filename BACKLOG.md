@@ -21,10 +21,10 @@ Market observations are consumed through the current market-data gateway. Multiv
 Current Multivariate baseline at the review SHA:
 
 - `multivariate.candidates@v9`;
-- `multivariate.validation@v7`;
+- `multivariate.validation@v8`;
 - `multivariate.risk_model@v1`;
 - `multivariate.structural_walk_forward@v1`;
-- `MULTIVARIATE_EXECUTION_VERSION = multivariate_execution.clean.v4`;
+- `MULTIVARIATE_EXECUTION_VERSION = multivariate_execution.clean.v5`;
 - production covariance estimator is Ledoit-Wolf with `window_policy=full`;
 - production candidate methods are `equal_weight`, `inverse_volatility`, `minimum_variance`, `equal_risk_contribution`, `hierarchical_risk_parity`, `minimum_cvar`;
 - walk-forward policy is minimum training 100 observations, test window 21 observations, maximum 8 refits, minimum 2 completed splits, transaction-cost rate 0.0005;
@@ -297,6 +297,10 @@ Add exact `CandidateScorecard` fields:
 Rules: use completed splits only; unavailable values remain `None`; drawdown is absolute before aggregation; scorecard identity is configuration ID; no winner logic changes.
 
 Acceptance: independent fixtures verify every field and configuration aggregation; validation `v7 -> v8`; execution `clean.v4 -> clean.v5`.
+
+Git status: integrated on `main` at `670b9fe`; scorecards now persist median
+Sharpe, Sortino, CVaR, absolute drawdown, turnover and HHI metrics from
+completed splits. Focused validation and Dash tests pass.
 
 ### PR442 — Separate stress warnings from blocking eligibility
 
