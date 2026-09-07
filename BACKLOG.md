@@ -865,6 +865,11 @@ atomic migration plan, acceptance criteria and QA evidence contract are in
 Git status: PR460 merged on `main` at `79b16e8`; its planning document is now
 part of the repository. PR461–PR480 are the next executable work orders and
 must be completed linearly before Selection v2 can be declared final.
+
+PR461 status: integrated on `main` at `54aaf50`; the immutable 252/21/8/2
+comparison policy and exact 14 semantic configuration definitions are available.
+PR462 status: implementation and independent stage-1 evidence are prepared in
+the current worktree; the QA branch must be merged before PR463 begins.
 - Multivariate readiness requires matching current Selection + Bivariate lineage;
 - no manual allocator/spec/winner selector exists in production workflow;
 - UI clearly separates `Selection Evidence` from `Portfolio Diagnostics`;
