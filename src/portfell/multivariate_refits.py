@@ -59,7 +59,10 @@ def build_refitted_candidate_sets(
             (snapshot, handle.name, income, tuple(dates), batch, policy) for batch in batches
         )
         groups = executor.map(_build_refit_batch, tasks)
-        return tuple(item for group in groups for item in group)
+        # Worker batches are intentionally round-robin for load balancing;
+        # validation, however, is path-dependent and must consume refits in
+        # the canonical chronological start order.
+        return _ordered_refit_candidate_sets(groups)
     finally:
         try:
             os.unlink(handle.name)
@@ -76,15 +79,23 @@ def _build_refit_batch(
         tuple[int, ...],
         WalkForwardPolicy,
     ]
-) -> tuple[tuple[PortfolioCandidate, ...], ...]:
+) -> tuple[tuple[int, tuple[PortfolioCandidate, ...]], ...]:
     snapshot, return_path, income, dates, starts, _policy = task
     with open(return_path, "rb") as handle:
         return_rows = tuple(pickle.load(handle))
-    results: list[tuple[PortfolioCandidate, ...]] = []
+    results: list[tuple[int, tuple[PortfolioCandidate, ...]]] = []
     for start in starts:
         training_dates = set(dates[:start])
         training_rows = tuple(
             row for row in return_rows if str(row.get("date", "")) in training_dates
         )
-        results.append(build_refit_candidate_set(CandidateRefitTask(snapshot, training_rows, income)))
+        results.append((start, build_refit_candidate_set(CandidateRefitTask(snapshot, training_rows, income))))
     return tuple(results)
+
+
+def _ordered_refit_candidate_sets(
+    groups: Sequence[Sequence[tuple[int, tuple[PortfolioCandidate, ...]]]],
+) -> tuple[tuple[PortfolioCandidate, ...], ...]:
+    """Flatten worker batches by canonical walk-forward start index."""
+    ordered = sorted((item for group in groups for item in group), key=lambda item: item[0])
+    return tuple(candidate_set for _start, candidate_set in ordered)
