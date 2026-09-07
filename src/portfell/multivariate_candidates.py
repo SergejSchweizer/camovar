@@ -21,6 +21,7 @@ from portfell.multivariate_risk_model import (
     MultivariateRiskModelArtifact,
     build_multivariate_risk_model,
 )
+from portfell.multivariate_risk_spec import RiskModelSpecification
 from portfell.portfolio import portfolio_variance
 from portfell.portfolio_parts.clustering import (
     correlation_distance_matrix,
@@ -37,7 +38,7 @@ from portfell.portfolio_parts.solvers import (
     solve_minimum_variance,
 )
 
-CANDIDATE_CONTRACT = ContractVersion("multivariate.candidates", 9)
+CANDIDATE_CONTRACT = ContractVersion("multivariate.candidates", 10)
 MAX_WALK_FORWARD_SOLVER_ITERATIONS = 500
 # The solver's projected-gradient step includes a capped-simplex projection;
 # the old 100k limit made each of up to 24 walk-forward refits effectively
@@ -91,6 +92,8 @@ class CandidateRefitTask:
     policy: MonthlyDistributionEtfPortfolioPolicy = (
         DEFAULT_MONTHLY_DISTRIBUTION_ETF_PORTFOLIO_POLICY
     )
+    risk_model_spec_id: str = ""
+    risk_model_spec: RiskModelSpecification | None = None
 
 
 @dataclass(frozen=True)
@@ -119,6 +122,9 @@ class PortfolioCandidate:
     # Stable semantic lineage is separate from fit-specific candidate_id.
     candidate_configuration_id: str = ""
     risk_model_id: str | None = None
+    risk_model_spec_key: str = ""
+    risk_model_spec_id: str = ""
+    fit_calendar_id: str = ""
 
 
 @dataclass(frozen=True)
@@ -191,7 +197,9 @@ def _build_candidate(
 
 
 def build_refit_candidate_set(task: CandidateRefitTask) -> tuple[PortfolioCandidate, ...]:
-    risk_model = build_multivariate_risk_model(snapshot=task.snapshot, return_rows=task.return_rows)
+    risk_model = build_multivariate_risk_model(
+        snapshot=task.snapshot, return_rows=task.return_rows, spec=task.risk_model_spec
+    )
     return build_candidate_set(
         snapshot=task.snapshot,
         risk_model=risk_model,
@@ -270,6 +278,9 @@ def _candidate(
         risk_contributions=metrics.risk_contributions,
         candidate_configuration_id=_configuration_id(method, policy, risk_model),
         risk_model_id=risk_model.risk_model_id,
+        risk_model_spec_key=risk_model.spec_key,
+        risk_model_spec_id=risk_model.spec_id,
+        fit_calendar_id=risk_model.fit_calendar_id,
     )
 
 
@@ -286,6 +297,7 @@ def _configuration_id(
             "policy": policy.to_row(),
             "estimator": risk_model.estimator,
             "window_policy": risk_model.window_policy,
+            "risk_model_spec_id": risk_model.spec_id,
         },
     )
 

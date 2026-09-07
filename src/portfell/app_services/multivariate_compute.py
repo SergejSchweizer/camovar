@@ -25,6 +25,7 @@ from portfell.multivariate_quote_views import common_dates, first_price, last_pr
 from portfell.multivariate_refits import build_refitted_candidate_sets
 from portfell.multivariate_risk_model import build_multivariate_risk_model
 from portfell.multivariate_risk_stress import correlation_convergence_25pct, volatility_up_25pct
+from portfell.multivariate_risk_spec import LW_FULL
 from portfell.multivariate_structural_walk_forward import (
     build_structural_walk_forward_evidence,
     structural_walk_forward_rows,
@@ -44,7 +45,7 @@ from portfell.multivariate_validation import (
 from portfell.return_series import build_returns
 from portfell.table_io import JsonRow
 
-MULTIVARIATE_EXECUTION_VERSION = "multivariate_execution.clean.v14"
+MULTIVARIATE_EXECUTION_VERSION = "multivariate_execution.clean.v15"
 MULTIVARIATE_PHASES = (
     "inputs",
     "risk_model_and_candidates",
@@ -167,7 +168,7 @@ def compute_multivariate(
     if phase < 2:
         if on_phase is not None:
             on_phase(1, MULTIVARIATE_PHASES[0])
-        risk = build_multivariate_risk_model(snapshot=snapshot, return_rows=returns)
+        risk = build_multivariate_risk_model(snapshot=snapshot, return_rows=returns, spec=LW_FULL)
         structure = build_multivariate_structure(risk)
         quote_json_rows = tuple(dict(row) for row in quote_rows)
         income = {
@@ -185,7 +186,8 @@ def compute_multivariate(
             snapshot=snapshot, risk_model=risk, return_rows=returns, income=income, executor=executor
         )
         refitted = build_refitted_candidate_sets(
-            executor=executor, candidates=candidates, snapshot=snapshot, return_rows=returns, income=income
+            executor=executor, candidates=candidates, snapshot=snapshot, return_rows=returns, income=income,
+            risk_model_spec=LW_FULL,
         )
         state = {"phase": 2, "risk": risk, "structure": structure, "income": income,
                  "candidates": candidates, "refitted": refitted}
@@ -476,6 +478,9 @@ def _candidate_row(item: PortfolioCandidate) -> JsonRow:
         "candidate_id": item.candidate_id,
         "candidate_configuration_id": item.candidate_configuration_id,
         "risk_model_id": item.risk_model_id,
+        "risk_model_spec_key": item.risk_model_spec_key,
+        "risk_model_spec_id": item.risk_model_spec_id,
+        "fit_calendar_id": item.fit_calendar_id,
         "method": item.method,
         "baseline": item.baseline,
         "status": item.status,

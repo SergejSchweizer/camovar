@@ -16,6 +16,7 @@ from portfell.multivariate_candidates import (
     build_refit_candidate_set,
 )
 from portfell.multivariate_inputs import MultivariateInputSnapshot, MultivariateListingKey
+from portfell.multivariate_risk_spec import RiskModelSpecification
 from portfell.multivariate_validation import (
     DEFAULT_WALK_FORWARD_POLICY,
     WalkForwardPolicy,
@@ -32,6 +33,7 @@ def build_refitted_candidate_sets(
     return_rows: Sequence[Mapping[str, Any]],
     income: Mapping[MultivariateListingKey, IncomeEvidence],
     policy: WalkForwardPolicy = DEFAULT_WALK_FORWARD_POLICY,
+    risk_model_spec: RiskModelSpecification | None = None,
 ) -> tuple[tuple[PortfolioCandidate, ...], ...]:
     # Each refit used to be submitted as a separate process task containing a
     # large, overlapping training-row slice.  With 24 refits that repeatedly
@@ -56,7 +58,7 @@ def build_refitted_candidate_sets(
         with handle:
             pickle.dump(tuple(return_rows), handle, protocol=pickle.HIGHEST_PROTOCOL)
         tasks = tuple(
-            (snapshot, handle.name, income, tuple(dates), batch, policy) for batch in batches
+            (snapshot, handle.name, income, tuple(dates), batch, policy, risk_model_spec) for batch in batches
         )
         groups = executor.map(_build_refit_batch, tasks)
         # Worker batches are intentionally round-robin for load balancing;
@@ -78,9 +80,10 @@ def _build_refit_batch(
         tuple[str, ...],
         tuple[int, ...],
         WalkForwardPolicy,
+        RiskModelSpecification | None,
     ]
 ) -> tuple[tuple[int, tuple[PortfolioCandidate, ...]], ...]:
-    snapshot, return_path, income, dates, starts, _policy = task
+    snapshot, return_path, income, dates, starts, _policy, risk_model_spec = task
     with open(return_path, "rb") as handle:
         return_rows = tuple(pickle.load(handle))
     results: list[tuple[int, tuple[PortfolioCandidate, ...]]] = []
@@ -89,7 +92,7 @@ def _build_refit_batch(
         training_rows = tuple(
             row for row in return_rows if str(row.get("date", "")) in training_dates
         )
-        results.append((start, build_refit_candidate_set(CandidateRefitTask(snapshot, training_rows, income))))
+        results.append((start, build_refit_candidate_set(CandidateRefitTask(snapshot, training_rows, income, risk_model_spec=risk_model_spec))))
     return tuple(results)
 
 

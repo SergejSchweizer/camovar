@@ -13,7 +13,7 @@ from portfell.contract_versioning import ContractVersion, stable_contract_id
 from portfell.multivariate_candidates import PortfolioCandidate
 from portfell.multivariate_inputs import MultivariateListingKey
 
-VALIDATION_CONTRACT = ContractVersion("multivariate.validation", 11)
+VALIDATION_CONTRACT = ContractVersion("multivariate.validation", 12)
 CandidateFactory = Callable[[Sequence[Mapping[str, Any]]], Sequence[PortfolioCandidate]]
 
 
@@ -118,6 +118,9 @@ class ValidationSplit:
     test_observation_count: int = 0
     candidate_configuration_id: str = ""
     same_split_return_drawdown_ratio: float | None = None
+    risk_model_spec_key: str = ""
+    risk_model_spec_id: str = ""
+    fit_calendar_id: str = ""
 
 
 def walk_forward_validation_row(item: ValidationSplit) -> dict[str, Any]:
@@ -236,7 +239,8 @@ def validate_candidates(
                 continue
             test, metrics = metrics_by_method[candidate.method]
             pre_cost, volatility, sharpe, sortino, cvar, max_drawdown = metrics
-            previous = previous_weights.get(candidate.method)
+            configuration_key = candidate.candidate_configuration_id or candidate.candidate_id
+            previous = previous_weights.get(configuration_key)
             turnover = _turnover(previous, candidate.weights)
             cost = (
                 turnover * policy.transaction_cost_rate
@@ -248,7 +252,7 @@ def validate_candidates(
                 if max_drawdown is not None and abs(max_drawdown) > 0
                 else None
             )
-            previous_weights[candidate.method] = candidate.weights
+            previous_weights[configuration_key] = candidate.weights
             results.append(
                 ValidationSplit(
                     split_id=stable_contract_id(
@@ -277,6 +281,9 @@ def validate_candidates(
                     weights=candidate.weights,
                     requested_method=requested.method,
                     risk_model_id=candidate.risk_model_id or risk_model_id,
+                    risk_model_spec_key=getattr(candidate, "risk_model_spec_key", ""),
+                    risk_model_spec_id=getattr(candidate, "risk_model_spec_id", ""),
+                    fit_calendar_id=getattr(candidate, "fit_calendar_id", ""),
                     sharpe_ratio=sharpe,
                     sortino_ratio=sortino,
                     conditional_value_at_risk=cvar,
