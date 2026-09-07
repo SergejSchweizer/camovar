@@ -895,7 +895,10 @@ PR473 status: exact current-sample 14-configuration family, shared three-model
 fits, descriptive lineage and reconciliation tests are integrated on `main` at
 `af57366`.
 PR474 status: independent full-sample lineage/evidence-role QA and sanitized
-stage-7 evidence are prepared on the QA branch; merge before beginning PR475.
+stage-7 evidence are integrated on `main` at `4d74afb`.
+PR475 status: contract-, digest- and execution-version-bound checkpoint
+save/load validation is prepared on the implementation branch; merge before
+beginning PR476.
 
 ### Corrective migration execution index (PR461–PR480)
 
