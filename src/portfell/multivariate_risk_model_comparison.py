@@ -82,7 +82,7 @@ def build_risk_model_comparison(
     *, snapshot: MultivariateInputSnapshot, return_rows: Sequence[Mapping[str, Any]],
     income: Mapping[MultivariateListingKey, IncomeEvidence], executor: Executor | None = None,
 ) -> dict[str, Any]:
-    """Build the deterministic shadow manifest and current full-sample evidence."""
+    """Build deterministic common-OOS comparison and current-sample evidence."""
     models: dict[str, Any] = {}
     for spec in COMPARISON_SPECS:
         models[spec.spec_key] = build_multivariate_risk_model(
