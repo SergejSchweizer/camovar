@@ -52,6 +52,7 @@ _SCENARIO_NAMES = (
     "correlation_convergence",
     "distribution_cut",
 )
+NON_BLOCKING_SCENARIO_REASONS = frozenset({"cash_flow_evidence_only"})
 
 
 def walk_forward_training_rows(
@@ -168,6 +169,7 @@ class CandidateScorecard:
     median_absolute_max_drawdown: float | None = None
     median_turnover: float | None = None
     median_herfindahl_index: float | None = None
+    warning_reasons: tuple[str, ...] = ()
 
 
 def validate_candidates(
@@ -356,12 +358,13 @@ def build_candidate_scorecards(
         drawdowns = sorted(abs(item.max_drawdown) for item in completed if item.max_drawdown is not None)
         turnovers = sorted(item.turnover for item in completed)
         hhis = sorted(item.herfindahl_index for item in completed if item.herfindahl_index is not None)
-        reasons = tuple(
-            sorted(
-                {item.reason for item in candidate_splits if item.reason}
-                | {item.reason for item in candidate_scenarios if item.reason}
-            )
-        )
+        all_reasons = {
+            str(item.reason)
+            for item in (*candidate_splits, *candidate_scenarios)
+            if item.reason
+        }
+        reasons = tuple(sorted(all_reasons - NON_BLOCKING_SCENARIO_REASONS))
+        warnings = tuple(sorted(all_reasons & NON_BLOCKING_SCENARIO_REASONS))
         method = next(
             (item.method for item in candidate_splits),
             next((item.method for item in candidate_scenarios), "unavailable"),
@@ -386,6 +389,7 @@ def build_candidate_scorecards(
                 median_absolute_max_drawdown=_median(drawdowns),
                 median_turnover=_median(turnovers),
                 median_herfindahl_index=_median(hhis),
+                warning_reasons=warnings,
             )
         )
     return tuple(scorecards)

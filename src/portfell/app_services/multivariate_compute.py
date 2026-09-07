@@ -43,7 +43,7 @@ from portfell.multivariate_validation import (
 from portfell.return_series import build_returns
 from portfell.table_io import JsonRow
 
-MULTIVARIATE_EXECUTION_VERSION = "multivariate_execution.clean.v5"
+MULTIVARIATE_EXECUTION_VERSION = "multivariate_execution.clean.v6"
 MULTIVARIATE_PHASES = (
     "inputs",
     "risk_model_and_candidates",
@@ -387,7 +387,9 @@ def _select_decision(
         {
             str(item.reason)
             for item in scenarios
-            if item.candidate_id == candidate_id and item.reason is not None
+            if item.candidate_id == candidate_id
+            and item.reason is not None
+            and item.reason != "cash_flow_evidence_only"
         }
     )
     production_eligible = (
@@ -409,6 +411,7 @@ def _select_decision(
         "median_volatility": scorecard.median_volatility,
         "availability_reasons": list(scorecard.availability_reasons),
         "scenario_reasons": scenario_reasons,
+        "warning_reasons": list(scorecard.warning_reasons),
         "tie_break": "candidate_id_ascending",
     }
     return MultivariateDecision(

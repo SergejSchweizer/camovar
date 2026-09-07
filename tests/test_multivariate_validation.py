@@ -233,6 +233,8 @@ def test_stress_and_scorecards_are_deterministic_and_do_not_select_a_winner() ->
     assert scorecards[0].median_turnover is not None
     assert scorecards[0].median_herfindahl_index == candidate.herfindahl_index
     assert scorecards[0].median_absolute_max_drawdown is not None
+    assert scorecards[0].warning_reasons == ("cash_flow_evidence_only",)
+    assert "cash_flow_evidence_only" not in scorecards[0].availability_reasons
 
 
 def test_scorecard_keeps_split_only_candidate_visible() -> None:
