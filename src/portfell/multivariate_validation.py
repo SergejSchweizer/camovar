@@ -13,7 +13,7 @@ from portfell.contract_versioning import ContractVersion, stable_contract_id
 from portfell.multivariate_candidates import PortfolioCandidate
 from portfell.multivariate_inputs import MultivariateListingKey
 
-VALIDATION_CONTRACT = ContractVersion("multivariate.validation", 9)
+VALIDATION_CONTRACT = ContractVersion("multivariate.validation", 10)
 CandidateFactory = Callable[[Sequence[Mapping[str, Any]]], Sequence[PortfolioCandidate]]
 
 
@@ -119,6 +119,7 @@ class ValidationSplit:
     income_available: bool = False
     test_observation_count: int = 0
     candidate_configuration_id: str = ""
+    same_split_return_drawdown_ratio: float | None = None
 
 
 def walk_forward_validation_row(item: ValidationSplit) -> dict[str, Any]:
@@ -243,6 +244,11 @@ def validate_candidates(
                 if candidate_factory is not None or precomputed_candidates is not None
                 else policy.transaction_cost_rate
             )
+            ratio = (
+                (pre_cost - cost) / abs(max_drawdown)
+                if max_drawdown is not None and abs(max_drawdown) > 0
+                else None
+            )
             previous_weights[candidate.method] = candidate.weights
             results.append(
                 ValidationSplit(
@@ -280,6 +286,7 @@ def validate_candidates(
                     income_available=candidate.gross_ttm_distribution_yield is not None,
                     test_observation_count=len(test),
                     candidate_configuration_id=candidate.candidate_configuration_id,
+                    same_split_return_drawdown_ratio=ratio,
                 )
             )
     if precomputed_candidates is not None and refit_index != len(precomputed_candidates):
