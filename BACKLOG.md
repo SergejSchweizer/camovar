@@ -24,7 +24,7 @@ Current Multivariate baseline at the review SHA:
 - `multivariate.validation@v10`;
 - `multivariate.risk_model@v1`;
 - `multivariate.structural_walk_forward@v1`;
-- `MULTIVARIATE_EXECUTION_VERSION = multivariate_execution.clean.v7`;
+- `MULTIVARIATE_EXECUTION_VERSION = multivariate_execution.clean.v8`;
 - production covariance estimator is Ledoit-Wolf with `window_policy=full`;
 - production candidate methods are `equal_weight`, `inverse_volatility`, `minimum_variance`, `equal_risk_contribution`, `hierarchical_risk_parity`, `minimum_cvar`;
 - walk-forward policy is minimum training 100 observations, test window 21 observations, maximum 8 refits, minimum 2 completed splits, transaction-cost rate 0.0005;
@@ -369,6 +369,10 @@ Task:
 - Decision persists `objective_metric = median_sharpe_ratio`.
 
 Acceptance: lower-return/higher-Sharpe configuration beats higher-return/lower-Sharpe configuration; execution `clean.v7 -> clean.v8`.
+
+Git status: integrated on `main` at `d5959da`; `return_risk` now ranks only
+by persisted median OOS Sharpe and records `objective_metric` in the Decision
+artifact. Focused decision and Multivariate tests pass.
 
 ### PR445 — Make `return_drawdown` use median same-split ratio
 
