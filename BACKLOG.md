@@ -899,7 +899,10 @@ stage-7 evidence are integrated on `main` at `4d74afb`.
 PR475 status: contract-, digest- and execution-version-bound checkpoint
 save/load validation is integrated on `main` at `6ab67f1`.
 PR476 status: independent restart-equivalence, version-mismatch, corruption
-and idempotence QA is prepared on the QA branch; merge before beginning PR477.
+and idempotence QA is integrated on `main` at `725b02a`.
+PR477 status: Dash Selection Evidence/Portfolio Diagnostics separation and
+persisted ranking read-model rendering are prepared on the implementation
+branch; merge before beginning PR478.
 
 ### Corrective migration execution index (PR461–PR480)
 

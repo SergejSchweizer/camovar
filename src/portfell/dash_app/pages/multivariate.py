@@ -77,6 +77,8 @@ def multivariate_page_data(service: MultivariateService) -> dict[str, object]:
                         "multivariate.structure@v2",
                         "multivariate.structure@v3",
                         "multivariate.candidate_structure@v2",
+                        "risk_model_comparison",
+                        "current_sample_family",
                     )
                     if artifact_type in cast(list[object], summary.get("artifact_types", []))
                 },
@@ -96,6 +98,11 @@ def multivariate_page_data(service: MultivariateService) -> dict[str, object]:
         or artifacts.get("multivariate.structure@v2")
     )
     candidate_structure_document = _mapping(artifacts.get("multivariate.candidate_structure@v2"))
+    comparison = _mapping(artifacts.get("risk_model_comparison"))
+    ranking_objective = str((decision_doc or {}).get("objective", "return_risk"))
+    ranking_rows = _mappings(
+        (_mapping(comparison.get("configuration_rankings")) if comparison else {}).get(ranking_objective)
+    )
     # Multivariate performance is scoped to the exact selection consumed by
     # the successful Bivariate run. Never plot a broader/stale Univariate
     # selection when Bivariate evidence is missing or belongs to another
@@ -182,6 +189,7 @@ def multivariate_page_data(service: MultivariateService) -> dict[str, object]:
             if candidate_structure_document
             else None
         ),
+        "selection_ranking": ranking_rows,
         "winner_oos_return": (
             None if decision_doc is None else decision_doc.get("median_post_cost_return")
         ),
@@ -242,6 +250,7 @@ def _layout(
     }
     universe_structure = _mapping(model.get("universe_structure"))
     candidate_structure = _mapping(model.get("candidate_structure"))
+    selection_ranking = _mappings(model.get("selection_ranking"))
     bivariate_matches_selection = (
         bivariate is not None
         and selection is not None
@@ -296,6 +305,26 @@ def _layout(
         children.append(StatusBanner(message))
     children.extend(
         [
+            TableCard(
+                "Selection Evidence",
+                [
+                    html.P("Common OOS 14-configuration ranking; current-sample diagnostics are descriptive."),
+                    html.Table(
+                        [
+                            html.Thead(html.Tr([html.Th(label) for label in ("Rank", "Method", "Risk spec", "Score")])),
+                            html.Tbody([
+                                html.Tr([
+                                    html.Td(_display(row.get("rank"))),
+                                    html.Td(_display(row.get("method"))),
+                                    html.Td(_display(row.get("spec_key"))),
+                                    html.Td(_display(row.get("objective_score"))),
+                                ]) for row in selection_ranking
+                            ]),
+                        ], className="pf-table",
+                    ) if selection_ranking else UnavailableData("Common OOS selection evidence is unavailable."),
+                ],
+                component_id="multivariate-selection-evidence",
+            ),
             html.Div(
                 [
                     KpiCard("Winner OOS return", _display(model.get("winner_oos_return"))),
