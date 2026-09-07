@@ -20,11 +20,11 @@ Market observations are consumed through the current market-data gateway. Multiv
 
 Current Multivariate baseline at the review SHA:
 
-- `multivariate.candidates@v7`;
+- `multivariate.candidates@v8`;
 - `multivariate.validation@v5`;
 - `multivariate.risk_model@v1`;
 - `multivariate.structural_walk_forward@v1`;
-- `MULTIVARIATE_EXECUTION_VERSION = multivariate_execution.clean.v1`;
+- `MULTIVARIATE_EXECUTION_VERSION = multivariate_execution.clean.v2`;
 - production covariance estimator is Ledoit-Wolf with `window_policy=full`;
 - production candidate methods are `equal_weight`, `inverse_volatility`, `minimum_variance`, `equal_risk_contribution`, `hierarchical_risk_parity`, `minimum_cvar`, `highest_monthly_return`;
 - walk-forward policy is minimum training 100 observations, test window 21 observations, maximum 8 refits, minimum 2 completed splits, transaction-cost rate 0.0005;
@@ -201,6 +201,11 @@ Acceptance:
 - candidate contract `v7 -> v8`;
 - execution version `clean.v1 -> clean.v2`;
 - current default risk-model candidate count is exactly six.
+
+Git status: integrated on `main` at `a94f2ac`; the unsupported
+`highest_monthly_return` candidate and its dedicated tests were removed, the
+candidate contract advanced to v8, and Multivariate execution advanced to
+`clean.v2`. Focused candidate/lineage tests pass.
 
 ### PR439 — Restore chronological walk-forward refit ordering
 
