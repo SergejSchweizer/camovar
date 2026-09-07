@@ -13,7 +13,7 @@ from portfell.contract_versioning import ContractVersion, stable_contract_id
 from portfell.multivariate_candidates import PortfolioCandidate
 from portfell.multivariate_inputs import MultivariateListingKey
 
-VALIDATION_CONTRACT = ContractVersion("multivariate.validation", 7)
+VALIDATION_CONTRACT = ContractVersion("multivariate.validation", 8)
 CandidateFactory = Callable[[Sequence[Mapping[str, Any]]], Sequence[PortfolioCandidate]]
 
 
@@ -161,6 +161,13 @@ class CandidateScorecard:
     median_volatility: float | None
     scenario_count: int
     availability_reasons: tuple[str, ...]
+    candidate_configuration_id: str = ""
+    median_sharpe_ratio: float | None = None
+    median_sortino_ratio: float | None = None
+    median_conditional_value_at_risk: float | None = None
+    median_absolute_max_drawdown: float | None = None
+    median_turnover: float | None = None
+    median_herfindahl_index: float | None = None
 
 
 def validate_candidates(
@@ -343,6 +350,12 @@ def build_candidate_scorecards(
         completed = [item for item in candidate_splits if item.status == "complete"]
         returns = sorted(item.post_cost_return for item in completed)
         volatility = sorted(item.volatility for item in completed if item.volatility is not None)
+        sharpes = sorted(item.sharpe_ratio for item in completed if item.sharpe_ratio is not None)
+        sortinos = sorted(item.sortino_ratio for item in completed if item.sortino_ratio is not None)
+        cvars = sorted(item.conditional_value_at_risk for item in completed if item.conditional_value_at_risk is not None)
+        drawdowns = sorted(abs(item.max_drawdown) for item in completed if item.max_drawdown is not None)
+        turnovers = sorted(item.turnover for item in completed)
+        hhis = sorted(item.herfindahl_index for item in completed if item.herfindahl_index is not None)
         reasons = tuple(
             sorted(
                 {item.reason for item in candidate_splits if item.reason}
@@ -363,6 +376,16 @@ def build_candidate_scorecards(
                 median_volatility=_median(volatility),
                 scenario_count=len(candidate_scenarios),
                 availability_reasons=reasons,
+                candidate_configuration_id=next(
+                    (item.candidate_configuration_id for item in (*candidate_splits, *candidate_scenarios) if item.candidate_configuration_id),
+                    "",
+                ),
+                median_sharpe_ratio=_median(sharpes),
+                median_sortino_ratio=_median(sortinos),
+                median_conditional_value_at_risk=_median(cvars),
+                median_absolute_max_drawdown=_median(drawdowns),
+                median_turnover=_median(turnovers),
+                median_herfindahl_index=_median(hhis),
             )
         )
     return tuple(scorecards)
