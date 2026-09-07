@@ -24,7 +24,7 @@ Current Multivariate baseline at the review SHA:
 - `multivariate.validation@v11`;
 - `multivariate.risk_model@v1`;
 - `multivariate.structural_walk_forward@v1`;
-- `MULTIVARIATE_EXECUTION_VERSION = multivariate_execution.clean.v11`;
+- `MULTIVARIATE_EXECUTION_VERSION = multivariate_execution.clean.v13`;
 - production covariance estimator is Ledoit-Wolf with `window_policy=full`;
 - production candidate methods are `equal_weight`, `inverse_volatility`, `minimum_variance`, `equal_risk_contribution`, `hierarchical_risk_parity`, `minimum_cvar`;
 - walk-forward policy is minimum training 100 observations, test window 21 observations, maximum 8 refits, minimum 2 completed splits, transaction-cost rate 0.0005;
@@ -484,6 +484,8 @@ Rules:
 
 Acceptance: independent two-asset matrix oracle and serialization fixture pass; execution `clean.v11 -> clean.v12`.
 
+Git status: integrated on `main` at `9e4c709`; the volatility-up stress diagnostic scales asset covariance by 1.25² and persists variance/volatility evidence without affecting ranking.
+
 ### PR450 — Add true 25% correlation-convergence asset-level risk stress
 
 Branch: `feat/pr450-correlation-convergence-risk-stress`
@@ -507,6 +509,8 @@ Rules:
 - descriptive diagnostic only; no ranking effect.
 
 Acceptance: independent two-asset oracle passes; risk-stress version increments; execution `clean.v12 -> clean.v13`.
+
+Git status: integrated on `main` at `61f5dee`; correlation-convergence stress now moves off-diagonal correlations 25% toward one, validates PSD output, and persists descriptive variance/volatility evidence.
 
 ### PR451 — Introduce immutable RiskModelSpecification and exact fit-calendar lineage
 
