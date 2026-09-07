@@ -43,7 +43,7 @@ from portfell.multivariate_validation import (
 from portfell.return_series import build_returns
 from portfell.table_io import JsonRow
 
-MULTIVARIATE_EXECUTION_VERSION = "multivariate_execution.clean.v9"
+MULTIVARIATE_EXECUTION_VERSION = "multivariate_execution.clean.v10"
 MULTIVARIATE_PHASES = (
     "inputs",
     "risk_model_and_candidates",
@@ -356,14 +356,23 @@ def _select_decision(
     scenarios: Sequence[ValidationScenario],
 ) -> MultivariateDecision:
     candidate_by_id = {item.candidate_id: item for item in candidates}
-    scored: list[tuple[float, str, CandidateScorecard]] = []
+    scored: list[tuple[float, float, float, str, str, CandidateScorecard]] = []
     for scorecard in scorecards:
         candidate = candidate_by_id.get(scorecard.candidate_id)
         if candidate is None or candidate.status != "feasible":
             continue
         score = _objective_score(objective, scorecard, splits)
         if score is not None:
-            scored.append((score, scorecard.candidate_id, scorecard))
+            scored.append(
+                (
+                    score,
+                    scorecard.median_turnover if scorecard.median_turnover is not None else float("inf"),
+                    scorecard.median_herfindahl_index if scorecard.median_herfindahl_index is not None else float("inf"),
+                    scorecard.candidate_configuration_id or candidate.candidate_configuration_id or candidate.candidate_id,
+                    scorecard.candidate_id,
+                    scorecard,
+                )
+            )
     if not scored:
         return MultivariateDecision(
             objective=objective,
@@ -381,7 +390,9 @@ def _select_decision(
                 "ranking_basis": "walk_forward_out_of_sample_only",
             },
         )
-    score, candidate_id, scorecard = sorted(scored, key=lambda item: (-item[0], item[1]))[0]
+    score, _turnover, _hhi, _configuration_id, candidate_id, scorecard = sorted(
+        scored, key=lambda item: (-item[0], item[1], item[2], item[3], item[4])
+    )[0]
     candidate = candidate_by_id[candidate_id]
     scenario_reasons = sorted(
         {
@@ -417,7 +428,7 @@ def _select_decision(
         "availability_reasons": list(scorecard.availability_reasons),
         "scenario_reasons": scenario_reasons,
         "warning_reasons": list(scorecard.warning_reasons),
-        "tie_break": "candidate_id_ascending",
+        "tie_break": "median_turnover_ascending_then_median_hhi_ascending_then_configuration_id_ascending",
     }
     return MultivariateDecision(
         objective=objective,

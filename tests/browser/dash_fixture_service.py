@@ -284,7 +284,7 @@ class DashParityFixtureService:
             "status": "succeeded",
             "input_ref": "fixture-bivariate-run",
             "input_snapshot_id": "market_source_snapshot_fixture_1",
-            "algorithm_version": "multivariate_execution.clean.v9",
+            "algorithm_version": "multivariate_execution.clean.v10",
             "objective": objective,
         }
 
