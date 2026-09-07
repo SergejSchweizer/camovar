@@ -652,7 +652,7 @@ Acceptance:
 - clean/resumed comparison evidence is identical;
 - execution `clean.v16 -> clean.v17`.
 
-Git status: integrated on `main` at `47edfbb`; persisted shadow evidence now contains exactly 14 frozen method/spec configurations and three risk-model identities.
+Git status: integrated on `main` at `cd6aa99`; persisted shadow evidence now contains exactly 14 frozen method/spec configurations, three risk-model identities and one shared chronological comparison schedule.
 
 ### PR455 — Make common-split OOS evidence the production selection authority
 
