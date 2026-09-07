@@ -1,16 +1,21 @@
 # Portfell — Authoritative Backlog
 
-Last reviewed: 2026-09-04
+Last reviewed: 2026-09-07
 
 ## 0. Single executable authority
 
 `BACKLOG.md` is the only executable backlog authority for Portfell. Historical backlog text, old pull-request descriptions and archived planning branches are audit material only when they conflict with this file.
 
-This revision is reconciled against the exact current `main` commit `66d7b7e948bbc58a14688156c3118bc1c8a8eaec` (`show all portfolio performance series`). The immediately preceding Portfolio Selection v2 planning revision is preserved at `c7faa1fabf138ae975da0dcb3f06280f15d77f37`; earlier revisions are preserved at `96ca8745b90b847b5abd05e9c6411a78a47f6aa9` and `c352d788dcb75fb01fc280615d2ef55b781783bb`. None of those superseded plans is executable after this revision.
+This revision is reconciled against the exact current `main` commit
+`5bc2cee9a678564db9c50797e7fccd68d9ce776b` (Portfolio Selection v2 closeout).
+Earlier planning revisions remain recoverable from Git history and are not
+executable after this revision.
 
 `GATES.md` remains the authority for repository quality and merge requirements. The current Python coverage floor must not be reduced as part of this series.
 
-The labels `PR437` ... `PR459` below are backlog work-order identifiers. GitHub assigns the actual pull-request number when an implementation branch is opened; agents must not assume that the GitHub number equals the work-order identifier.
+The labels `PR437` ... `PR480` below are backlog work-order identifiers. GitHub
+assigns the actual pull-request number when an implementation branch is opened;
+agents must not assume that the GitHub number equals the work-order identifier.
 
 ## 1. Current production architecture — frozen baseline
 
@@ -102,7 +107,9 @@ The following findings are verified against the current code and are inputs to t
 
 ## 4. Global weak-agent execution contract
 
-Only PR437–PR459 below are executable. PR308–PR436 are integrated/retired historical work and must not be reopened as dependencies.
+PR437–PR480 are now integrated and closed. PR308–PR436 are integrated/retired
+historical work and must not be reopened as dependencies. New work requires a
+new, explicitly scoped backlog work order.
 
 For every active PR:
 
@@ -153,7 +160,7 @@ PR437
   -> PR459(QA/PASS)
 ```
 
-## 5. Portfolio Selection v2 — active PR437–PR459
+## 5. Portfolio Selection v2 — completed PR437–PR459 work orders
 
 ### PR437 — Re-freeze Portfolio Selection v2 against the current runtime
 
@@ -170,13 +177,15 @@ Task: keep this file as compact execution authority based on current `main`, pre
 Acceptance:
 
 - baseline SHA is `66d7b7e948bbc58a14688156c3118bc1c8a8eaec`;
-- only PR437–PR459 are executable;
+- PR437–PR459 are historical work orders, all integrated before the corrective
+  PR460–PR480 migration;
 - eight-refit baseline, worker batching, checkpoints, persisted performance artifacts and current Dash behavior are acknowledged;
 - the exact 14-configuration family and configuration-key migration are frozen;
 - objective selection, evidence-role separation and no-winner semantics are explicit workflow contracts;
 - no production source/test behavior changes.
 
-Git status: integrated on `main` at `3deb1a0`; the reconciled PR437–PR459 execution backlog is the sole active planning authority.
+Git status: integrated on `main`; the PR437–PR459 plan is retained as audit
+history and is superseded by the completed PR460–PR480 migration.
 
 ### PR438 — Remove `highest_monthly_return` completely
 
@@ -908,8 +917,8 @@ authority, and the repository/GitHub merge gates. Defects found by a QA PR
 require a separate corrective implementation PR and a fresh QA run.
 
 Git status: PR460 merged on `main` at `79b16e8`; its planning document is now
-part of the repository. PR461–PR480 are the next executable work orders and
-must be completed linearly before Selection v2 can be declared final.
+part of the repository. PR461–PR480 are all integrated and the Selection v2
+closeout is complete on the current `main` head.
 
 PR461 status: integrated on `main` at `54aaf50`; the immutable 252/21/8/2
 comparison policy and exact 14 semantic configuration definitions are available.
@@ -1019,4 +1028,5 @@ The following topics are outside PR437–PR459 and require a new backlog contrac
 
 PR308–PR436 are integrated/retired historical backlog items. Their detailed history remains recoverable from repository history. Superseded Portfolio Selection v2 plans are audit material only.
 
-The only active execution sequence is PR461 -> ... -> PR480.
+There is currently no active execution sequence. New work must be added as a
+new atomic backlog work order with its own acceptance criteria.
