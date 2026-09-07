@@ -223,8 +223,6 @@ def test_stress_and_scorecards_are_deterministic_and_do_not_select_a_winner() ->
     assert [item.scenario for item in scenarios] == [
         "historical",
         "seeded_block_bootstrap",
-        "covariance_perturbation",
-        "correlation_convergence",
         "distribution_cut",
     ]
     assert scenarios[-1].reason == "cash_flow_evidence_only"
@@ -287,7 +285,7 @@ def test_validation_keeps_unavailable_candidates_and_empty_scenarios_explicit() 
     )
     assert splits and splits[0].reason == "candidate_unavailable"
     scenarios = validate_candidate_stress(candidates=[unavailable], return_rows=[], policy=policy)
-    assert len(scenarios) == 5
+    assert len(scenarios) == 3
     assert {scenario.status for scenario in scenarios} == {"unavailable"}
 
 

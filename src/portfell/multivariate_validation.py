@@ -13,7 +13,7 @@ from portfell.contract_versioning import ContractVersion, stable_contract_id
 from portfell.multivariate_candidates import PortfolioCandidate
 from portfell.multivariate_inputs import MultivariateListingKey
 
-VALIDATION_CONTRACT = ContractVersion("multivariate.validation", 10)
+VALIDATION_CONTRACT = ContractVersion("multivariate.validation", 11)
 CandidateFactory = Callable[[Sequence[Mapping[str, Any]]], Sequence[PortfolioCandidate]]
 
 
@@ -48,8 +48,6 @@ DEFAULT_WALK_FORWARD_POLICY = WalkForwardPolicy()
 _SCENARIO_NAMES = (
     "historical",
     "seeded_block_bootstrap",
-    "covariance_perturbation",
-    "correlation_convergence",
     "distribution_cut",
 )
 NON_BLOCKING_SCENARIO_REASONS = frozenset({"cash_flow_evidence_only"})
@@ -502,14 +500,9 @@ def _scenario_values(
     rng = Random(policy.bootstrap_seed)
     count = min(policy.bootstrap_observations, len(values))
     bootstrap = _seeded_block_bootstrap(values, count, rng)
-    mean = sum(values) / len(values)
-    covariance_perturbed = tuple(mean + 1.25 * (value - mean) for value in values)
-    convergence = tuple(0.75 * value + 0.25 * mean for value in values)
     return (
         ("historical", tuple(values), None),
         ("seeded_block_bootstrap", bootstrap, None),
-        ("covariance_perturbation", covariance_perturbed, None),
-        ("correlation_convergence", convergence, None),
         ("distribution_cut", tuple(values), "cash_flow_evidence_only"),
     )
 
