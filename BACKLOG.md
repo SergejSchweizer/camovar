@@ -875,6 +875,42 @@ PR463 status: integrated on `main` at `6cca12c`; split-local three-spec
 risk-model bundles persist fit identities and explicit unavailable fits.
 PR464 status: independent numerical, leakage and fit-count QA evidence is
 prepared on the QA branch; merge it before beginning PR465.
+
+### Corrective migration execution index (PR461–PR480)
+
+The following is the executable backlog extracted from
+`PORTFOLIO_SELECTION_V2_MIGRATION.md`. Each item is atomic, depends only on
+the preceding item, and must satisfy the linked document's complete task and
+acceptance list before its status can change to merged. QA items are
+evidence-only and may not silently repair production code.
+
+| PR | Work order | Required result |
+| --- | --- | --- |
+| PR461 | Freeze comparison contract | Immutable 14 configurations and exact 252/21/8/2 policy. |
+| PR462 | QA comparison contract | Independent contract evidence, exact family and policy checks. |
+| PR463 | Split-local risk models | One training-only `LW_FULL`, `LW_ROLLING_252`, and `EWMA_094` bundle per split; persist unavailable fits. |
+| PR464 | QA split risk models | Numerical oracle, leakage mutation, fit-count and fit-calendar evidence. |
+| PR465 | Split-local candidates | Exactly 14 configuration slots per split, including unavailable slots and stable IDs. |
+| PR466 | QA split candidates | Prove identity stability, no overwrite, and 14-slot completeness across refits. |
+| PR467 | Common OOS validation | Measure all 14 configurations on identical chronological test windows. |
+| PR468 | QA common OOS | Independently verify metrics, boundaries, unavailable handling and worker determinism. |
+| PR469 | Config-keyed scorecards | Persist comparable scorecards keyed by configuration and common split evidence. |
+| PR470 | QA scorecards | Verify scorecard joins, ranking inputs and descriptive-data exclusion. |
+| PR471 | Decision authority cutover | Make common-OOS 14-configuration ranking the sole production Decision authority. |
+| PR472 | QA Decision authority | Prove objective routing, deterministic winner selection and no legacy fallback. |
+| PR473 | Full-current-sample family | Materialize the exact 14 winning/refit family for descriptive diagnostics. |
+| PR474 | QA full-sample family | Verify complete family, lineage and descriptive-only role. |
+| PR475 | Checkpoint migration | Persist/resume every split and preserve dataset-digest identity and phase evidence. |
+| PR476 | QA checkpoint migration | Prove clean/resumed artifact equivalence and idempotent publication. |
+| PR477 | Dash/read-model cutover | Render only persisted Selection Evidence and preserve objective/lineage contracts. |
+| PR478 | QA Dash cutover | Browser and API evidence without page, console or stale-authority errors. |
+| PR479 | Retire legacy authority | Remove shadow/legacy ranking paths and reject unavailable candidate fallbacks. |
+| PR480 | Final closeout | Produce one sanitized immutable PASS artifact and close the migration. |
+
+The authoritative details, branch names, ownership boundaries and acceptance
+criteria for every row above remain in
+[`PORTFOLIO_SELECTION_V2_MIGRATION.md`](PORTFOLIO_SELECTION_V2_MIGRATION.md).
+The merge state in this file is updated after every PR merge.
 - Multivariate readiness requires matching current Selection + Bivariate lineage;
 - no manual allocator/spec/winner selector exists in production workflow;
 - UI clearly separates `Selection Evidence` from `Portfolio Diagnostics`;
@@ -904,4 +940,4 @@ The following topics are outside PR437–PR459 and require a new backlog contrac
 
 PR308–PR436 are integrated/retired historical backlog items. Their detailed history remains recoverable from repository history. Superseded Portfolio Selection v2 plans are audit material only.
 
-The only active execution sequence is PR437 -> ... -> PR459.
+The only active execution sequence is PR461 -> ... -> PR480.
