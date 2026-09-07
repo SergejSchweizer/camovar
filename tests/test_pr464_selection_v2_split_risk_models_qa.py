@@ -26,7 +26,7 @@ def _independent_ewma(rows, keys, decay=0.94):
 
 def test_independent_ewma_oracle_and_rolling_calendar() -> None:
     snapshot, rows = _fixture()
-    bundles = build_split_risk_model_bundles(snapshot=snapshot, return_rows=rows)
+    bundles = build_split_risk_model_bundles(snapshot=snapshot, return_rows=rows, starts=(100, 252))
     bundle = bundles[0]
     ewma = bundle.model("EWMA_094")
     expected = _independent_ewma(
@@ -60,7 +60,7 @@ def test_fit_call_count_is_three_per_split(monkeypatch) -> None:
 
 def test_stage_two_evidence_is_sanitized_and_complete() -> None:
     snapshot, rows = _fixture()
-    bundles = build_split_risk_model_bundles(snapshot=snapshot, return_rows=rows)
+    bundles = build_split_risk_model_bundles(snapshot=snapshot, return_rows=rows, starts=(100, 252))
     evidence = split_risk_models_evidence(
         sha="test-sha", bundles=[row for bundle in bundles for row in bundle.to_rows()],
         focused_tests=["test_pr463_selection_v2_split_risk_models.py"],

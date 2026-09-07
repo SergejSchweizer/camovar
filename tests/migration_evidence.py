@@ -48,6 +48,26 @@ def split_risk_models_evidence(
         split: sum(1 for row in rows if int(row["split_index"]) == split)
         for split in split_indexes
     }
+    return {
+        "contract": "portfolio-selection-v2-migration@v1",
+        "sha": sha,
+        "stage": "split_risk_models_complete",
+        "stage_ordinal": 2,
+        "completed_implementation_prs": ["PR461", "PR463"],
+        "completed_qa_prs": ["PR462", "PR464"],
+        "selection_authority": "legacy_lw_full",
+        "split_count": len(split_indexes),
+        "fits_per_split": fits_per_split,
+        "max_fits_per_split": max(fits_per_split.values(), default=0),
+        "all_fit_calendars_persisted": all(bool(row.get("fit_calendar_id")) for row in rows),
+        "unavailable_fits_retained": any(row.get("status") == "unavailable" for row in rows),
+        "split_local_three_spec_risk_fits": True,
+        "future_mutation_invariant": True,
+        "no_test_observations_in_fit": True,
+        "focused_tests": list(focused_tests),
+        "status": "PASS",
+        "failure_reasons": [],
+    }
 
 
 def split_candidate_family_evidence(
@@ -78,26 +98,6 @@ def split_candidate_family_evidence(
         ),
         "unavailable_candidates_retained": any(row.get("status") == "unavailable" for row in rows),
         "no_method_spec_overwrite": True,
-        "focused_tests": list(focused_tests),
-        "status": "PASS",
-        "failure_reasons": [],
-    }
-    return {
-        "contract": "portfolio-selection-v2-migration@v1",
-        "sha": sha,
-        "stage": "split_risk_models_complete",
-        "stage_ordinal": 2,
-        "completed_implementation_prs": ["PR461", "PR463"],
-        "completed_qa_prs": ["PR462", "PR464"],
-        "selection_authority": "legacy_lw_full",
-        "split_count": len(split_indexes),
-        "fits_per_split": fits_per_split,
-        "max_fits_per_split": max(fits_per_split.values(), default=0),
-        "all_fit_calendars_persisted": all(bool(row.get("fit_calendar_id")) for row in rows),
-        "unavailable_fits_retained": any(row.get("status") == "unavailable" for row in rows),
-        "split_local_three_spec_risk_fits": True,
-        "future_mutation_invariant": True,
-        "no_test_observations_in_fit": True,
         "focused_tests": list(focused_tests),
         "status": "PASS",
         "failure_reasons": [],
