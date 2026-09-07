@@ -880,8 +880,9 @@ are integrated on `main` at `0992c1c`.
 PR466 status: independent 14-slot identity/completeness QA evidence is
 integrated on `main` at `30628f0`.
 PR467 status: measured common-split OOS validation for all 14 configurations
-and lineage tests are prepared on the implementation branch; merge before
-beginning PR468.
+and lineage tests are integrated on `main` at `da3bd6f`.
+PR468 status: independent OOS return, turnover, cost and reconciliation QA
+evidence is prepared on the QA branch; merge it before beginning PR469.
 
 ### Corrective migration execution index (PR461–PR480)
 
