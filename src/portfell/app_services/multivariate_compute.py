@@ -44,7 +44,7 @@ from portfell.multivariate_validation import (
 from portfell.return_series import build_returns
 from portfell.table_io import JsonRow
 
-MULTIVARIATE_EXECUTION_VERSION = "multivariate_execution.clean.v13"
+MULTIVARIATE_EXECUTION_VERSION = "multivariate_execution.clean.v14"
 MULTIVARIATE_PHASES = (
     "inputs",
     "risk_model_and_candidates",
@@ -309,6 +309,9 @@ def compute_multivariate(
             "is_positive_semidefinite": risk.is_positive_semidefinite,
             "availability_reasons": list(risk.availability_reasons),
             "algorithm_version": risk.algorithm_version,
+            "fit_calendar_id": risk.fit_calendar_id,
+            "spec_key": risk.spec_key,
+            "spec_id": risk.spec_id,
         },
         "structure": {
             **structure.summary(),

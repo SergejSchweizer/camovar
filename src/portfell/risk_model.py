@@ -77,6 +77,7 @@ class RiskModelDiagnostics:
     algorithm_version: int
     production_eligible: bool
     availability_reasons: tuple[str, ...]
+    fit_calendar_id: str = ""
 
 
 @dataclass(frozen=True)
@@ -109,6 +110,8 @@ def estimate_risk_model(
         raise ValueError(f"unknown return type: {return_type}")
     if not 0.0 <= ewma_decay <= 1.0:
         raise ValueError("ewma_decay must be in [0, 1]")
+    if window_policy == "full" and window_size is not None:
+        raise ValueError("full_window_does_not_accept_window_size")
 
     field = "return" if return_type == "log" else "simple_return"
     returns_by_listing = _index_returns_by_listing(return_rows, field)
@@ -132,6 +135,8 @@ def estimate_risk_model(
         window_size=window_size,
         as_of=as_of,
     )
+    if window_policy == "rolling" and window_size is not None and len(raw_common_dates) < window_size:
+        raise ValueError(f"insufficient common history: need exact rolling window of {window_size} observations")
     if len(windowed_dates) < MIN_OBSERVATIONS:
         raise ValueError(
             "insufficient common history: need at least "
@@ -186,6 +191,7 @@ def estimate_risk_model(
         algorithm_version=ALGORITHM_VERSION,
         production_eligible=not availability_reasons,
         availability_reasons=availability_reasons,
+        fit_calendar_id=stable_contract_id("risk_model_fit_calendar", {"dates": list(windowed_dates)}),
     )
     return RiskModelResult(
         listings=resolved_listings,

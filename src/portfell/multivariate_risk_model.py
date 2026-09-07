@@ -15,10 +15,11 @@ from typing import Any
 
 from portfell.contract_versioning import ContractVersion, stable_contract_id
 from portfell.multivariate_inputs import MultivariateInputSnapshot, MultivariateListingKey
+from portfell.multivariate_risk_spec import LW_FULL, RiskModelSpecification
 from portfell.risk_model import RiskModelResult, estimate_risk_model
 from portfell.table_io import JsonRow
 
-RISK_MODEL_ARTIFACT_CONTRACT = ContractVersion("multivariate.risk_model", 1)
+RISK_MODEL_ARTIFACT_CONTRACT = ContractVersion("multivariate.risk_model", 2)
 PRODUCTION_ESTIMATOR = "ledoit_wolf"
 
 
@@ -70,6 +71,9 @@ class MultivariateRiskModelArtifact:
     is_positive_semidefinite: bool
     availability_reasons: tuple[str, ...]
     algorithm_version: int
+    fit_calendar_id: str = ""
+    spec_key: str = ""
+    spec_id: str = ""
 
     @property
     def available(self) -> bool:
@@ -88,11 +92,20 @@ def build_multivariate_risk_model(
     estimator: str = PRODUCTION_ESTIMATOR,
     window_policy: str = "full",
     estimator_parameters: Mapping[str, float] | None = None,
+    spec: RiskModelSpecification | None = None,
 ) -> MultivariateRiskModelArtifact:
     """Estimate the snapshot's one joint risk model and persistable identity."""
 
     if not snapshot.eligible:
         return _unavailable(snapshot, estimator, window_policy, "input_snapshot_unavailable")
+    if spec is None and estimator == PRODUCTION_ESTIMATOR and window_policy == "full" and estimator_parameters is None:
+        spec = LW_FULL
+    if spec is not None:
+        estimator, window_policy = spec.estimator, spec.window_policy
+        estimator_parameters = {"ewma_decay": spec.ewma_decay} if spec.ewma_decay is not None else {}
+        window_size = spec.window_size
+    else:
+        window_size = None
     parameters = tuple(sorted((estimator_parameters or {}).items()))
     try:
         result = estimate_risk_model(
@@ -100,6 +113,7 @@ def build_multivariate_risk_model(
             listings=tuple(key.as_tuple() for key in snapshot.listing_keys),
             estimator=estimator,
             window_policy=window_policy,
+            window_size=window_size,
             ewma_decay=dict(parameters).get("ewma_decay", 0.94),
         )
     except (TypeError, ValueError) as error:
@@ -107,7 +121,7 @@ def build_multivariate_risk_model(
             snapshot, estimator, window_policy, f"risk_model_error:{error}", parameters
         )
     reasons = tuple(sorted(result.diagnostics.availability_reasons))
-    return _artifact(snapshot, result, estimator, window_policy, parameters, reasons)
+    return _artifact(snapshot, result, estimator, window_policy, parameters, reasons, spec)
 
 
 def _artifact(
@@ -117,6 +131,7 @@ def _artifact(
     window_policy: str,
     parameters: tuple[tuple[str, float], ...],
     reasons: tuple[str, ...],
+    spec: RiskModelSpecification | None = None,
 ) -> MultivariateRiskModelArtifact:
     listings = tuple(MultivariateListingKey(*item) for item in result.listings)
     identity = _risk_model_identity(
@@ -149,6 +164,9 @@ def _artifact(
         is_positive_semidefinite=diagnostics.is_positive_semidefinite,
         availability_reasons=reasons,
         algorithm_version=diagnostics.algorithm_version,
+        fit_calendar_id=diagnostics.fit_calendar_id,
+        spec_key=(spec.spec_key if spec is not None else ""),
+        spec_id=(spec.spec_id if spec is not None else ""),
     )
 
 
