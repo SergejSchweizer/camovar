@@ -21,12 +21,12 @@ Market observations are consumed through the current market-data gateway. Multiv
 Current Multivariate baseline at the review SHA:
 
 - `multivariate.candidates@v8`;
-- `multivariate.validation@v5`;
+- `multivariate.validation@v6`;
 - `multivariate.risk_model@v1`;
 - `multivariate.structural_walk_forward@v1`;
-- `MULTIVARIATE_EXECUTION_VERSION = multivariate_execution.clean.v2`;
+- `MULTIVARIATE_EXECUTION_VERSION = multivariate_execution.clean.v3`;
 - production covariance estimator is Ledoit-Wolf with `window_policy=full`;
-- production candidate methods are `equal_weight`, `inverse_volatility`, `minimum_variance`, `equal_risk_contribution`, `hierarchical_risk_parity`, `minimum_cvar`, `highest_monthly_return`;
+- production candidate methods are `equal_weight`, `inverse_volatility`, `minimum_variance`, `equal_risk_contribution`, `hierarchical_risk_parity`, `minimum_cvar`;
 - walk-forward policy is minimum training 100 observations, test window 21 observations, maximum 8 refits, minimum 2 completed splits, transaction-cost rate 0.0005;
 - refits are process-parallel, worker-batched and exchange the large immutable return history through a temporary local file;
 - Multivariate has durable resumable checkpoints keyed by dataset digest and execution version;
@@ -233,6 +233,10 @@ Acceptance:
 - single-worker and multi-worker outputs are identical in order and fitted weights;
 - validation contract `v5 -> v6`;
 - execution version `clean.v2 -> clean.v3`.
+
+Git status: integrated on `main` at `4643b12`; worker-batched refits now carry
+their canonical walk-forward start index and are reassembled chronologically
+before validation. Focused refit, validation and structural tests pass.
 
 ### PR440 — Introduce stable configuration, fit and risk-model lineage
 
