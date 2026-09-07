@@ -24,7 +24,7 @@ from portfell.multivariate_performance import build_multivariate_performance
 from portfell.multivariate_quote_views import common_dates, first_price, last_price
 from portfell.multivariate_refits import build_refitted_candidate_sets
 from portfell.multivariate_risk_model import build_multivariate_risk_model
-from portfell.multivariate_risk_stress import volatility_up_25pct
+from portfell.multivariate_risk_stress import correlation_convergence_25pct, volatility_up_25pct
 from portfell.multivariate_structural_walk_forward import (
     build_structural_walk_forward_evidence,
     structural_walk_forward_rows,
@@ -44,7 +44,7 @@ from portfell.multivariate_validation import (
 from portfell.return_series import build_returns
 from portfell.table_io import JsonRow
 
-MULTIVARIATE_EXECUTION_VERSION = "multivariate_execution.clean.v12"
+MULTIVARIATE_EXECUTION_VERSION = "multivariate_execution.clean.v13"
 MULTIVARIATE_PHASES = (
     "inputs",
     "risk_model_and_candidates",
@@ -261,8 +261,12 @@ def compute_multivariate(
         for contribution in candidate.risk_contributions
     ]
     risk_stress_rows = [
-        volatility_up_25pct(risk_model=risk, candidate=candidate).to_row()
+        result.to_row()
         for candidate in candidates
+        for result in (
+            volatility_up_25pct(risk_model=risk, candidate=candidate),
+            correlation_convergence_25pct(risk_model=risk, candidate=candidate),
+        )
     ]
     income_rows = [_income_row(key, evidence) for key, evidence in sorted(income.items())]
     validation_rows = (
