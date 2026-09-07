@@ -13,6 +13,10 @@ from portfell.multivariate_candidates import PortfolioCandidate, build_candidate
 from portfell.multivariate_inputs import MultivariateInputSnapshot, MultivariateListingKey
 from portfell.multivariate_risk_model import build_multivariate_risk_model
 from portfell.multivariate_risk_spec import EWMA_094, LW_FULL, LW_ROLLING_252, RiskModelSpecification
+from portfell.multivariate_selection_ranking import (
+    build_configuration_scorecards,
+    rank_configuration_scorecards,
+)
 from portfell.multivariate_validation import (
     DEFAULT_WALK_FORWARD_POLICY,
     WalkForwardPolicy,
@@ -96,6 +100,14 @@ def build_risk_model_comparison(
         snapshot=snapshot, return_rows=return_rows, income=income,
         bundles=split_bundles, executor=executor,
     )
+    common_validation = build_common_oos_validation(
+        return_rows=return_rows, families=split_families, executor=executor,
+    )
+    common_validation_rows = [walk_forward_validation_row(item) for item in common_validation]
+    configuration_scorecards = build_configuration_scorecards(
+        validation_rows=common_validation_rows,
+        required_split_count=COMPARISON_WALK_FORWARD_POLICY.minimum_completed_splits,
+    )
     for method, spec_keys in COMPARISON_METHODS.items():
         for spec_key in spec_keys:
             spec = next(item for item in COMPARISON_SPECS if item.spec_key == spec_key)
@@ -141,10 +153,13 @@ def build_risk_model_comparison(
         "split_risk_model_bundles": [row for bundle in split_bundles for row in bundle.to_rows()],
         "split_candidate_families": [row for family in split_families for row in family.to_rows()],
         "common_oos_validation": [
-            row for item in build_common_oos_validation(
-                return_rows=return_rows, families=split_families, executor=executor,
-            ) for row in (walk_forward_validation_row(item),)
+            row for row in common_validation_rows
         ],
+        "configuration_scorecards": [card.to_row() for card in configuration_scorecards],
+        "configuration_rankings": {
+            objective: list(rank_configuration_scorecards(configuration_scorecards, objective=objective))
+            for objective in ("return_risk", "return_drawdown", "minimum_risk")
+        },
         "risk_models": {
             key: {"risk_model_id": model.risk_model_id, "fit_calendar_id": model.fit_calendar_id,
                   "status": "available" if model.available else "unavailable"}
