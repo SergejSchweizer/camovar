@@ -882,7 +882,10 @@ integrated on `main` at `30628f0`.
 PR467 status: measured common-split OOS validation for all 14 configurations
 and lineage tests are integrated on `main` at `da3bd6f`.
 PR468 status: independent OOS return, turnover, cost and reconciliation QA
-evidence is prepared on the QA branch; merge it before beginning PR469.
+evidence is integrated on `main` at `87e6ba4`.
+PR469 status: configuration-keyed common-OOS scorecards, deterministic
+objective ranking evidence and tests are prepared on the implementation
+branch; merge before beginning PR470.
 
 ### Corrective migration execution index (PR461–PR480)
 
