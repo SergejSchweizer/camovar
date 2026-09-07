@@ -871,9 +871,10 @@ comparison policy and exact 14 semantic configuration definitions are available.
 PR462 status: integrated on `main` at `3e1bfbb`; independent stage-1
 comparison-contract evidence is recorded in `tests/migration_evidence.py` and
 covered by `tests/test_pr462_selection_v2_comparison_contract_qa.py`.
-PR463 status: split-local three-spec risk-model bundles and leakage-invariance
-tests are prepared on the implementation branch; merge the implementation
-before beginning PR464 QA.
+PR463 status: integrated on `main` at `6cca12c`; split-local three-spec
+risk-model bundles persist fit identities and explicit unavailable fits.
+PR464 status: independent numerical, leakage and fit-count QA evidence is
+prepared on the QA branch; merge it before beginning PR465.
 - Multivariate readiness requires matching current Selection + Bivariate lineage;
 - no manual allocator/spec/winner selector exists in production workflow;
 - UI clearly separates `Selection Evidence` from `Portfolio Diagnostics`;
