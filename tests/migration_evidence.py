@@ -5,6 +5,16 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from typing import Any
 
+from portfell.selection_v2_contract import SELECTION_V2_CONFIGURATIONS, SELECTION_V2_POLICY
+
+
+_IMPLEMENTATION_PRS = [
+    "PR461", "PR463", "PR465", "PR467", "PR469", "PR471", "PR473", "PR475", "PR477", "PR479",
+]
+_QA_PRS = [
+    "PR462", "PR464", "PR466", "PR468", "PR470", "PR472", "PR474", "PR476", "PR478", "PR480",
+]
+
 
 def comparison_contract_evidence(
     *, sha: str, configurations: Sequence[Mapping[str, Any]], policy: Mapping[str, int],
@@ -79,6 +89,28 @@ def split_candidate_family_evidence(
     slots_per_split = {
         split: sum(1 for row in rows if int(row["split_index"]) == split)
         for split in split_indexes
+    }
+    return {
+        "contract": "portfolio-selection-v2-migration@v1",
+        "sha": sha,
+        "stage": "split_candidate_family_complete",
+        "stage_ordinal": 3,
+        "completed_implementation_prs": ["PR461", "PR463", "PR465"],
+        "completed_qa_prs": ["PR462", "PR464", "PR466"],
+        "selection_authority": "legacy_lw_full",
+        "split_count": len(split_indexes),
+        "candidate_slots_per_split": slots_per_split,
+        "exact_fourteen_slots": all(value == 14 for value in slots_per_split.values()),
+        "configuration_identity_stable": True,
+        "fit_identity_persisted": all(
+            bool(row.get("candidate_id")) and bool(row.get("risk_model_id"))
+            and bool(row.get("fit_calendar_id")) for row in rows
+        ),
+        "unavailable_candidates_retained": any(row.get("status") == "unavailable" for row in rows),
+        "no_method_spec_overwrite": True,
+        "focused_tests": list(focused_tests),
+        "status": "PASS",
+        "failure_reasons": [],
     }
 
 
@@ -244,25 +276,38 @@ def dash_cutover_evidence(
         "status": "PASS" if all(objective_results.values()) else "FAIL",
         "failure_reasons": [] if all(objective_results.values()) else ["browser_objective_failed"],
     }
+
+
+def final_closeout_evidence(
+    *, sha: str, checks: Mapping[str, bool], focused_tests: Sequence[str],
+) -> dict[str, Any]:
+    """Build the immutable, sanitized PR480 closeout record.
+
+    Only boolean acceptance results and fixed contract metadata are accepted;
+    market rows, paths and connection details never enter the artifact.
+    """
+    normalized_checks = {str(name): bool(value) for name, value in checks.items()}
+    failures = sorted(name for name, passed in normalized_checks.items() if not passed)
+    policy = SELECTION_V2_POLICY.to_row()
+    method_counts: dict[str, int] = {}
+    for configuration in SELECTION_V2_CONFIGURATIONS:
+        method_counts[configuration.method] = method_counts.get(configuration.method, 0) + 1
     return {
         "contract": "portfolio-selection-v2-migration@v1",
-        "sha": sha,
-        "stage": "split_candidate_family_complete",
-        "stage_ordinal": 3,
-        "completed_implementation_prs": ["PR461", "PR463", "PR465"],
-        "completed_qa_prs": ["PR462", "PR464", "PR466"],
-        "selection_authority": "legacy_lw_full",
-        "split_count": len(split_indexes),
-        "candidate_slots_per_split": slots_per_split,
-        "exact_fourteen_slots": all(value == 14 for value in slots_per_split.values()),
-        "configuration_identity_stable": True,
-        "fit_identity_persisted": all(
-            bool(row.get("candidate_id")) and bool(row.get("risk_model_id"))
-            and bool(row.get("fit_calendar_id")) for row in rows
-        ),
-        "unavailable_candidates_retained": any(row.get("status") == "unavailable" for row in rows),
-        "no_method_spec_overwrite": True,
-        "focused_tests": list(focused_tests),
-        "status": "PASS",
-        "failure_reasons": [],
+        "sha": str(sha),
+        "stage": "complete",
+        "stage_ordinal": 10,
+        "completed_implementation_prs": list(_IMPLEMENTATION_PRS),
+        "completed_qa_prs": list(_QA_PRS),
+        "selection_authority": "common_oos_14_config",
+        "allocator_method_count": len(method_counts),
+        "allocator_methods": sorted(method_counts),
+        "configuration_count": len(SELECTION_V2_CONFIGURATIONS),
+        "configuration_family_counts": dict(sorted(method_counts.items())),
+        "comparison_split_policy": policy,
+        "comparison_split_policy_fingerprint": SELECTION_V2_POLICY.fingerprint,
+        "checks": normalized_checks,
+        "focused_tests": [str(item) for item in focused_tests],
+        "status": "PASS" if not failures else "FAIL",
+        "failure_reasons": failures,
     }
