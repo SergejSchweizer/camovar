@@ -49,7 +49,7 @@ from portfell.contract_versioning import ContractVersion
 
 DECISION_CONTRACT = ContractVersion("multivariate.decision", 2)
 
-MULTIVARIATE_EXECUTION_VERSION = "multivariate_execution.clean.v18"
+MULTIVARIATE_EXECUTION_VERSION = "multivariate_execution.clean.v19"
 MULTIVARIATE_PHASES = (
     "inputs",
     "risk_model_and_candidates",
@@ -259,6 +259,10 @@ def compute_multivariate(
             "candidate_id": candidate.candidate_id,
             "candidate_configuration_id": candidate.candidate_configuration_id,
             "risk_model_id": candidate.risk_model_id,
+            "risk_model_spec_key": candidate.risk_model_spec_key,
+            "risk_model_spec_id": candidate.risk_model_spec_id,
+            "fit_calendar_id": candidate.fit_calendar_id,
+            "evidence_role": "descriptive",
             "method": candidate.method,
             "isin": contribution.listing.isin,
             "exchange": contribution.listing.exchange,
@@ -281,9 +285,9 @@ def compute_multivariate(
     ]
     income_rows = [_income_row(key, evidence) for key, evidence in sorted(income.items())]
     validation_rows = (
-        [walk_forward_validation_row(item) for item in validation]
-        + [{"kind": "stress", **asdict(item)} for item in scenarios]
-        + [{"kind": "scorecard", **asdict(item)} for item in scorecards]
+        [{"evidence_role": "selection", **walk_forward_validation_row(item)} for item in validation]
+        + [{"kind": "stress", "evidence_role": "selection", **asdict(item)} for item in scenarios]
+        + [{"kind": "scorecard", "evidence_role": "selection", **asdict(item)} for item in scorecards]
     )
     documents: dict[str, JsonRow] = {
         "summary": {

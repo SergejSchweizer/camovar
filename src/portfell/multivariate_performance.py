@@ -27,6 +27,11 @@ def build_multivariate_performance(
         portfolio_series.append(
             {
                 "candidate_id": candidate.candidate_id,
+                "candidate_configuration_id": candidate.candidate_configuration_id,
+                "risk_model_spec_key": candidate.risk_model_spec_key,
+                "risk_model_spec_id": candidate.risk_model_spec_id,
+                "risk_model_id": candidate.risk_model_id,
+                "evidence_role": "descriptive",
                 "method": candidate.method,
                 "values": _monthly_cumulative_values(daily),
             }
@@ -118,6 +123,11 @@ def _period_returns(candidate: PortfolioCandidate, daily: Mapping[str, float]) -
             rows.append(
                 {
                     "candidate_id": candidate.candidate_id,
+                    "candidate_configuration_id": candidate.candidate_configuration_id,
+                    "risk_model_spec_key": candidate.risk_model_spec_key,
+                    "risk_model_spec_id": candidate.risk_model_spec_id,
+                    "risk_model_id": candidate.risk_model_id,
+                    "evidence_role": "descriptive",
                     "method": candidate.method,
                     "period": period,
                     "label": label,
