@@ -20,11 +20,11 @@ Market observations are consumed through the current market-data gateway. Multiv
 
 Current Multivariate baseline at the review SHA:
 
-- `multivariate.candidates@v8`;
-- `multivariate.validation@v6`;
+- `multivariate.candidates@v9`;
+- `multivariate.validation@v7`;
 - `multivariate.risk_model@v1`;
 - `multivariate.structural_walk_forward@v1`;
-- `MULTIVARIATE_EXECUTION_VERSION = multivariate_execution.clean.v3`;
+- `MULTIVARIATE_EXECUTION_VERSION = multivariate_execution.clean.v4`;
 - production covariance estimator is Ledoit-Wolf with `window_policy=full`;
 - production candidate methods are `equal_weight`, `inverse_volatility`, `minimum_variance`, `equal_risk_contribution`, `hierarchical_risk_parity`, `minimum_cvar`;
 - walk-forward policy is minimum training 100 observations, test window 21 observations, maximum 8 refits, minimum 2 completed splits, transaction-cost rate 0.0005;
@@ -268,6 +268,10 @@ Acceptance:
 - fitted validation risk-model ID equals the model used by that refit;
 - scenario and structural rows reconcile without method-name guessing;
 - candidates `v8 -> v9`, validation `v6 -> v7`, structural walk-forward `v1 -> v2`, execution `clean.v3 -> clean.v4`.
+
+Git status: integrated on `main` at `9c7537c`; candidates, validation splits,
+stress scenarios, candidate rows and risk-contribution rows persist stable
+configuration IDs and fitted risk-model IDs. Focused lineage tests pass.
 
 ### PR441 — Enrich the canonical OOS scorecard
 
