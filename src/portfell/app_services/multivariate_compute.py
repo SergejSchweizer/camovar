@@ -37,10 +37,6 @@ from portfell.multivariate_structural_walk_forward import (
 from portfell.multivariate_structure import build_multivariate_structure
 from portfell.multivariate_structure_artifacts import build_structure_v2_documents
 from portfell.multivariate_validation import (
-    DEFAULT_WALK_FORWARD_POLICY,
-    CandidateScorecard,
-    ValidationScenario,
-    ValidationSplit,
     build_candidate_scorecards,
     validate_candidate_stress,
     validate_candidates,
@@ -470,126 +466,6 @@ def _select_common_oos_decision(
         reason=None if available else "common_oos_decision_evidence_unavailable",
         document=document,
     )
-
-
-def _select_decision(
-    *,
-    objective: str,
-    candidates: Sequence[PortfolioCandidate],
-    scorecards: Sequence[CandidateScorecard],
-    splits: Sequence[ValidationSplit],
-    scenarios: Sequence[ValidationScenario],
-) -> MultivariateDecision:
-    candidate_by_id = {item.candidate_id: item for item in candidates}
-    scored: list[tuple[float, float, float, str, str, CandidateScorecard]] = []
-    for scorecard in scorecards:
-        candidate = candidate_by_id.get(scorecard.candidate_id)
-        if candidate is None or candidate.status != "feasible":
-            continue
-        score = _objective_score(objective, scorecard, splits)
-        if score is not None:
-            scored.append(
-                (
-                    score,
-                    scorecard.median_turnover if scorecard.median_turnover is not None else float("inf"),
-                    scorecard.median_herfindahl_index if scorecard.median_herfindahl_index is not None else float("inf"),
-                    scorecard.candidate_configuration_id or candidate.candidate_configuration_id or candidate.candidate_id,
-                    scorecard.candidate_id,
-                    scorecard,
-                )
-            )
-    if not scored:
-        return MultivariateDecision(
-            objective=objective,
-            winning_candidate_id="unavailable",
-            requested_method="unavailable",
-            actual_method="unavailable",
-            available=False,
-            production_eligible=False,
-            reason="oos_decision_evidence_unavailable",
-            document={
-                "contract_version": DECISION_CONTRACT.qualified_name,
-                "objective": objective,
-                "available": False,
-                "production_eligible": False,
-                "reason": "oos_decision_evidence_unavailable",
-                "ranking_basis": "walk_forward_out_of_sample_only",
-            },
-        )
-    score, _turnover, _hhi, _configuration_id, candidate_id, scorecard = sorted(
-        scored, key=lambda item: (-item[0], item[1], item[2], item[3], item[4])
-    )[0]
-    candidate = candidate_by_id[candidate_id]
-    scenario_reasons = sorted(
-        {
-            str(item.reason)
-            for item in scenarios
-            if item.candidate_id == candidate_id
-            and item.reason is not None
-            and item.reason != "cash_flow_evidence_only"
-        }
-    )
-    production_eligible = (
-        scorecard.completed_split_count >= DEFAULT_WALK_FORWARD_POLICY.minimum_completed_splits
-        and not scorecard.availability_reasons
-        and not scenario_reasons
-    )
-    document: JsonRow = {
-        "contract_version": DECISION_CONTRACT.qualified_name,
-        "objective": objective,
-        "objective_metric": (
-            "median_sharpe_ratio" if objective == "return_risk"
-            else "minimum_volatility" if objective == "minimum_risk"
-            else "median_return_drawdown_ratio"
-        ),
-        "winning_candidate_id": candidate_id,
-        "requested_method": candidate.method,
-        "actual_method": candidate.method,
-        "available": True,
-        "production_eligible": production_eligible,
-        "ranking_basis": "walk_forward_out_of_sample_only",
-        "objective_score": score,
-        "completed_split_count": scorecard.completed_split_count,
-        "median_post_cost_return": scorecard.median_post_cost_return,
-        "median_volatility": scorecard.median_volatility,
-        "availability_reasons": list(scorecard.availability_reasons),
-        "scenario_reasons": scenario_reasons,
-        "warning_reasons": list(scorecard.warning_reasons),
-        "tie_break": "median_turnover_ascending_then_median_hhi_ascending_then_configuration_id_ascending",
-        "risk_model_spec_key": getattr(candidate, "risk_model_spec_key", ""),
-        "risk_model_spec_id": getattr(candidate, "risk_model_spec_id", ""),
-        "risk_model_id": getattr(candidate, "risk_model_id", None),
-        "fit_calendar_id": getattr(candidate, "fit_calendar_id", ""),
-        "comparison_split_count": scorecard.completed_split_count,
-        "risk_stress_model": "LW_FULL",
-        "full_history_evidence_role": "descriptive_non_selection",
-    }
-    return MultivariateDecision(
-        objective=objective,
-        winning_candidate_id=candidate_id,
-        requested_method=candidate.method,
-        actual_method=candidate.method,
-        available=True,
-        production_eligible=production_eligible,
-        reason=None if production_eligible else "candidate_not_production_eligible",
-        document=document,
-    )
-
-
-def _objective_score(
-    objective: str, scorecard: CandidateScorecard, splits: Sequence[ValidationSplit]
-) -> float | None:
-    minimum = DEFAULT_WALK_FORWARD_POLICY.minimum_completed_splits
-    if scorecard.completed_split_count < minimum:
-        return None
-    if objective == "return_risk":
-        return scorecard.median_sharpe_ratio
-    volatility = scorecard.median_volatility
-    if objective == "minimum_risk":
-        return None if volatility is None else -volatility
-    if objective == "return_drawdown":
-        return scorecard.median_return_drawdown_ratio
-    return None
 
 
 def _candidate_row(item: PortfolioCandidate) -> JsonRow:

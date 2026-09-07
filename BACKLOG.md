@@ -903,8 +903,10 @@ and idempotence QA is integrated on `main` at `725b02a`.
 PR477 status: Dash Selection Evidence/Portfolio Diagnostics separation and
 persisted ranking read-model rendering are integrated on `main` at `d5516ea`.
 PR478 status: browser/read-model QA for all objectives, stale readiness,
-winner diagnostics and console safety is prepared on the QA branch; merge
-before beginning PR479.
+winner diagnostics and console safety is integrated on `main` at `1806261`.
+PR479 status: legacy ranking code retirement, production-authority search and
+contract synchronization are prepared on the implementation branch; merge
+before beginning PR480.
 
 ### Corrective migration execution index (PR461–PR480)
 
