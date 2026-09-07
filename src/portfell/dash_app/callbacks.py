@@ -234,7 +234,7 @@ def execute_action(
                 row = writer.start_multivariate_job(
                     selection_id=state.selection_id,
                     bivariate_run_id=state.bivariate_run_id,
-                    objective="return_risk",
+                    objective=objective,
                 )
                 if isinstance(row, Mapping):
                     submitted_job = row
@@ -242,7 +242,7 @@ def execute_action(
                 writer.run_multivariate(
                     selection_id=state.selection_id,
                     bivariate_run_id=state.bivariate_run_id,
-                    objective="return_risk",
+                    objective=objective,
                 )
         elif action == "refresh":
             pass
@@ -620,11 +620,12 @@ def register_callbacks(app: Dash, services: object | None) -> None:
         Output("pf-browser-state", "data", allow_duplicate=True),
         Input("multivariate-optimize", "n_clicks"),
         State("pf-browser-state", "data"),
+        State("multivariate-objective", "value"),
         prevent_initial_call=True,
         running=[(Output("multivariate-optimize", "disabled"), True, False)],
     )
     def _optimize_multivariate(  # pyright: ignore[reportUnusedFunction]
-        n_clicks: int | None, store: object
+        n_clicks: int | None, store: object, objective: str | None
     ) -> dict[str, object] | object:
         if not n_clicks:
             return no_update
@@ -639,6 +640,7 @@ def register_callbacks(app: Dash, services: object | None) -> None:
             state,
             action="multivariate-optimize",
             write_service=multivariate_service,
+            objective=objective or "return_risk",
         ).to_store()
 
     @app.callback(  # pyright: ignore[reportUnknownMemberType]

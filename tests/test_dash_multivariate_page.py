@@ -164,7 +164,7 @@ def test_page_has_frozen_multivariate_contract_and_exact_weights() -> None:
     rendered = str(build_page(Service()).to_plotly_json())
     for text in (
         "Multivariate",
-        "Optimize portfolio",
+            "Run portfolio selection",
         "Winner OOS return",
         "Winner OOS risk",
         "Winner max drawdown",
@@ -182,7 +182,7 @@ def test_page_has_frozen_multivariate_contract_and_exact_weights() -> None:
         "0.6",
     ):
         assert text in rendered
-    assert "multivariate-objective" not in rendered
+    assert "multivariate-objective" in rendered
     assert "Universe &amp; History" not in rendered
     assert "Final decision is not production eligible yet." not in rendered
     assert "Cumulative Extended Return — Bivariate Selected ISINs" not in rendered

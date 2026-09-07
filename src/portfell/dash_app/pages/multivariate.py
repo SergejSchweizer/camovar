@@ -10,7 +10,7 @@ from typing import Protocol, cast
 
 import plotly.graph_objects as go  # pyright: ignore[reportMissingTypeStubs]
 from plotly.subplots import make_subplots  # pyright: ignore[reportMissingTypeStubs]
-from dash import html
+from dash import dcc, html
 from dash.development.base_component import Component
 
 from portfell.dash_app.candidate_structure_presenters import candidate_structure_view
@@ -257,7 +257,7 @@ def _layout(
         ControlBar(
             [
                 html.Button(
-                    children="Optimize portfolio",
+                    children="Run portfolio selection",
                     id="multivariate-optimize",
                     className="pf-button pf-button-primary",
                     disabled=(
@@ -267,6 +267,17 @@ def _layout(
                         or (run or {}).get("status") in {"queued", "running"}
                         or (active_job.get("status") in {"queued", "running"})
                     ),
+                ),
+                dcc.Dropdown(
+                    id="multivariate-objective",
+                    options=[
+                        {"label": "Return / Risk", "value": "return_risk"},
+                        {"label": "Return / Drawdown", "value": "return_drawdown"},
+                        {"label": "Minimum Risk", "value": "minimum_risk"},
+                    ],
+                    value="return_risk",
+                    clearable=False,
+                    style={"minWidth": "220px"},
                 ),
             ],
             component_id="multivariate-controls",
