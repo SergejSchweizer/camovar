@@ -24,6 +24,7 @@ from portfell.multivariate_performance import build_multivariate_performance
 from portfell.multivariate_quote_views import common_dates, first_price, last_price
 from portfell.multivariate_refits import build_refitted_candidate_sets
 from portfell.multivariate_risk_model import build_multivariate_risk_model
+from portfell.multivariate_risk_stress import volatility_up_25pct
 from portfell.multivariate_structural_walk_forward import (
     build_structural_walk_forward_evidence,
     structural_walk_forward_rows,
@@ -259,6 +260,10 @@ def compute_multivariate(
         for candidate in candidates
         for contribution in candidate.risk_contributions
     ]
+    risk_stress_rows = [
+        volatility_up_25pct(risk_model=risk, candidate=candidate).to_row()
+        for candidate in candidates
+    ]
     income_rows = [_income_row(key, evidence) for key, evidence in sorted(income.items())]
     validation_rows = (
         [walk_forward_validation_row(item) for item in validation]
@@ -324,6 +329,7 @@ def compute_multivariate(
         "candidates": {"items": candidate_rows},
         "validation": {"items": validation_rows},
         "risk_contributions": {"items": risk_contributions},
+        "risk_stress": {"items": risk_stress_rows},
         "income_evidence": {"items": income_rows},
         "performance": build_multivariate_performance(candidates=candidates, return_rows=returns),
         "decision": decision.document,
