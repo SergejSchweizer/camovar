@@ -20,11 +20,11 @@ Market observations are consumed through the current market-data gateway. Multiv
 
 Current Multivariate baseline at the review SHA:
 
-- `multivariate.candidates@v9`;
-- `multivariate.validation@v11`;
-- `multivariate.risk_model@v1`;
+- `multivariate.candidates@v10`;
+- `multivariate.validation@v13`;
+- `multivariate.risk_model@v2`;
 - `multivariate.structural_walk_forward@v1`;
-- `MULTIVARIATE_EXECUTION_VERSION = multivariate_execution.clean.v13`;
+- `MULTIVARIATE_EXECUTION_VERSION = multivariate_execution.clean.v19`;
 - production covariance estimator is Ledoit-Wolf with `window_policy=full`;
 - production candidate methods are `equal_weight`, `inverse_volatility`, `minimum_variance`, `equal_risk_contribution`, `hierarchical_risk_parity`, `minimum_cvar`;
 - walk-forward policy is minimum training 100 observations, test window 21 observations, maximum 8 refits, minimum 2 completed splits, transaction-cost rate 0.0005;
@@ -541,6 +541,8 @@ Rules:
 
 Acceptance: risk-model contract `v1 -> v2`; execution `clean.v13 -> clean.v14`; tests prove exact 252 observations and stable fit-calendar identity.
 
+Git status: integrated on `main` at `0abed8b`; immutable LW_FULL, LW_ROLLING_252 and EWMA_094 specifications now validate exact windows and persist fit-calendar identity.
+
 ### PR452 — Make candidate/refit identity risk-spec aware
 
 Branch: `refactor/pr452-risk-spec-candidate-identity`
@@ -564,6 +566,8 @@ Task:
 - with only `LW_FULL`, predecessor six-method weights and selection semantics remain unchanged apart from IDs.
 
 Acceptance: candidates `v9 -> v10`, validation `v11 -> v12`, execution `clean.v14 -> clean.v15`.
+
+Git status: integrated on `main` at `a6bbf15`; candidate configurations, refit tasks and validation splits now carry stable risk-spec and fit-calendar lineage, and turnover state is configuration-keyed.
 
 ### PR453 — Eliminate method-as-identity collisions before multi-spec execution
 
@@ -591,6 +595,8 @@ Acceptance:
 - configs have independent turnover and stress evidence;
 - no dict overwrite removes a configuration;
 - validation `v12 -> v13`; execution `clean.v15 -> clean.v16`.
+
+Git status: integrated on `main` at `20ca51c`; validation lookup, turnover state and stress-return evidence are configuration-keyed, with duplicate configurations rejected deterministically.
 
 ### PR454 — Produce common-split 14-configuration risk-model-family OOS evidence
 
@@ -646,6 +652,8 @@ Acceptance:
 - clean/resumed comparison evidence is identical;
 - execution `clean.v16 -> clean.v17`.
 
+Git status: integrated on `main` at `01aed92`; persisted shadow evidence now contains the exact 14 frozen method/spec configurations and three risk-model identities.
+
 ### PR455 — Make common-split OOS evidence the production selection authority
 
 Branch: `feat/pr455-oos-risk-model-selection`
@@ -696,6 +704,8 @@ Acceptance:
 - requested objective is unchanged from run request to Decision;
 - execution `clean.v17 -> clean.v18`.
 
+Git status: integrated on `main` at `59be438`; Decision artifacts now use `multivariate.decision@v2` and persist objective, risk-spec, fit-calendar, comparison-split and descriptive-evidence lineage.
+
 ### PR456 — Reconcile persisted lineage and machine-readable evidence roles
 
 Branch: `refactor/pr456-multivariate-artifact-lineage-v2`
@@ -727,6 +737,8 @@ Acceptance:
 - selection vs descriptive evidence role is machine-verifiable and covered by tests;
 - no descriptive artifact field is consumed by ranking code;
 - execution `clean.v18 -> clean.v19`.
+
+Git status: integrated on `main` at `3573a1f`; candidate, validation, risk-contribution and performance artifacts now carry joinable lineage and machine-readable selection/descriptive evidence roles.
 
 ### PR457 — Implement the clean Portfolio Selection workflow in Dash
 
@@ -771,6 +783,8 @@ Acceptance:
 - section labels and evidence-role labels match persisted semantics;
 - all existing supported plots continue rendering persisted artifacts at supported viewports.
 
+Git status: integrated on `main` at `f17f005`; the Multivariate action is now labelled Run portfolio selection, exposes the three supported objectives, and forwards the selected objective without substitution.
+
 ### PR458 — Harden durable checkpoint/resume semantics for Selection v2
 
 Branch: `fix/pr458-selection-v2-checkpoint-resume`
@@ -794,6 +808,8 @@ Task:
 - progress phase/total is monotone and consistent with Multivariate phases.
 
 Acceptance: clean-vs-resumed normalized artifacts reconcile at every supported boundary. Bump to `clean.v20` only if production checkpoint semantics change; otherwise retain `clean.v19`.
+
+Git status: integrated on `main` at `98f9565`; checkpoint payloads are now rejected when corrupt or phase-inconsistent, forcing clean recomputation instead of partial semantic reuse.
 
 ### PR459 — Independent Portfolio Selection v2 QA and immutable PASS evidence
 
@@ -834,6 +850,8 @@ Acceptance must independently prove on exact head SHA:
 - structural diagnostics are canonical-`LW_FULL` and non-ranking;
 - all three UI objectives submit and persist exactly, with default `return_risk` but no hard-coded override;
 - objective is part of run/Decision identity and a different objective cannot reuse a Decision as if it were the same request;
+
+Git status: integrated on `main` at `046dd81`; closeout invariants cover the six allocator methods, three risk specs, exact 14-configuration manifest, canonical scenario names and the absence of the retired scorecard authority.
 - Multivariate readiness requires matching current Selection + Bivariate lineage;
 - no manual allocator/spec/winner selector exists in production workflow;
 - UI clearly separates `Selection Evidence` from `Portfolio Diagnostics`;
