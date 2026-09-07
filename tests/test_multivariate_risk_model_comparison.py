@@ -21,4 +21,5 @@ def test_comparison_manifest_contains_exactly_fourteen_configurations() -> None:
     result = build_risk_model_comparison(snapshot=snapshot, return_rows=returns, income={})
     assert result["configuration_count"] == 14
     assert len(result["configurations"]) == 14
+    assert len(result["full_sample_evidence"]) == 14
     assert {item["spec_key"] for item in result["configurations"]} == {"LW_FULL", "LW_ROLLING_252", "EWMA_094"}

@@ -54,7 +54,7 @@ def build_risk_model_comparison(
                 "candidate_configuration_id": candidate.candidate_configuration_id,
                 "status": candidate.status,
                 "reason": candidate.reasons[0] if candidate.reasons else None,
-            } for candidate in candidates)
+            } for candidate in candidates if candidate.method == method)
     return {
         "contract_version": RISK_MODEL_COMPARISON_CONTRACT.qualified_name,
         "configuration_count": len(definitions),
