@@ -888,8 +888,9 @@ objective ranking evidence and tests are integrated on `main` at `bf7c74e`.
 PR470 status: independent objective-ranking, incomplete-evidence and warning
 QA with sanitized stage-5 evidence is integrated on `main` at `df2cf76`.
 PR471 status: common-OOS 14-configuration Decision authority cutover and
-authority tests are prepared on the implementation branch; merge before
-beginning PR472.
+authority tests are integrated on `main` at `9a1d11e`.
+PR472 status: independent production-authority QA and sanitized stage-6
+evidence are prepared on the QA branch; merge before beginning PR473.
 
 ### Corrective migration execution index (PR461–PR480)
 
