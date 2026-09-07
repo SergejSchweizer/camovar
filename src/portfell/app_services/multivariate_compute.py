@@ -43,7 +43,7 @@ from portfell.multivariate_validation import (
 from portfell.return_series import build_returns
 from portfell.table_io import JsonRow
 
-MULTIVARIATE_EXECUTION_VERSION = "multivariate_execution.clean.v7"
+MULTIVARIATE_EXECUTION_VERSION = "multivariate_execution.clean.v8"
 MULTIVARIATE_PHASES = (
     "inputs",
     "risk_model_and_candidates",
@@ -399,6 +399,11 @@ def _select_decision(
     )
     document: JsonRow = {
         "objective": objective,
+        "objective_metric": (
+            "median_sharpe_ratio" if objective == "return_risk"
+            else "minimum_volatility" if objective == "minimum_risk"
+            else "median_return_drawdown_ratio"
+        ),
         "winning_candidate_id": candidate_id,
         "requested_method": candidate.method,
         "actual_method": candidate.method,
@@ -430,15 +435,15 @@ def _objective_score(
     objective: str, scorecard: CandidateScorecard, splits: Sequence[ValidationSplit]
 ) -> float | None:
     minimum = DEFAULT_WALK_FORWARD_POLICY.minimum_completed_splits
-    if scorecard.completed_split_count < minimum or scorecard.median_volatility is None:
-        return None
-    volatility = scorecard.median_volatility
-    if objective == "minimum_risk":
-        return -volatility
-    if scorecard.median_post_cost_return is None:
+    if scorecard.completed_split_count < minimum:
         return None
     if objective == "return_risk":
-        return None if volatility <= 0 else scorecard.median_post_cost_return / volatility
+        return scorecard.median_sharpe_ratio
+    volatility = scorecard.median_volatility
+    if objective == "minimum_risk":
+        return None if volatility is None else -volatility
+    if scorecard.median_post_cost_return is None:
+        return None
     drawdowns = [
         abs(item.max_drawdown)
         for item in splits
