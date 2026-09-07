@@ -167,15 +167,19 @@ def build_candidate_set(
         DEFAULT_MONTHLY_DISTRIBUTION_ETF_PORTFOLIO_POLICY
     ),
     executor: Executor | None = None,
+    methods: Sequence[str] | None = None,
 ) -> tuple[PortfolioCandidate, ...]:
     """Build the stable candidates from one input/risk-model pair."""
     infeasible_reason = _feasibility_reason(snapshot, risk_model, policy)
+    requested_methods = tuple(methods) if methods is not None else METHODS
+    if any(method not in METHODS for method in requested_methods):
+        raise ValueError("unknown_candidate_method")
     if infeasible_reason:
         return tuple(
             _unavailable(snapshot, risk_model, policy, method, infeasible_reason)
-            for method in METHODS
+            for method in requested_methods
         )
-    tasks = tuple((snapshot, risk_model, return_rows, income, policy, method) for method in METHODS)
+    tasks = tuple((snapshot, risk_model, return_rows, income, policy, method) for method in requested_methods)
     return (
         tuple(_build_candidate(task) for task in tasks)
         if executor is None
@@ -455,6 +459,9 @@ def _unavailable(
         None,
         candidate_configuration_id=_configuration_id(method, policy, risk_model),
         risk_model_id=risk_model.risk_model_id,
+        risk_model_spec_key=risk_model.spec_key,
+        risk_model_spec_id=risk_model.spec_id,
+        fit_calendar_id=risk_model.fit_calendar_id,
     )
 
 

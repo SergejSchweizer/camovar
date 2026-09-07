@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from concurrent.futures import Executor
 from typing import Any
 
 from portfell.contract_versioning import ContractVersion
 from portfell.income import IncomeEvidence
-from portfell.multivariate_candidates import build_candidate_set
+from portfell.multivariate_candidates import PortfolioCandidate, build_candidate_set
 from portfell.multivariate_inputs import MultivariateInputSnapshot, MultivariateListingKey
 from portfell.multivariate_risk_model import build_multivariate_risk_model
 from portfell.multivariate_risk_spec import EWMA_094, LW_FULL, LW_ROLLING_252, RiskModelSpecification
@@ -123,6 +123,12 @@ def build_risk_model_comparison(
         "common_split_count": len(starts),
         "common_split_evidence": split_evidence,
         "split_risk_model_bundles": [row for bundle in split_bundles for row in bundle.to_rows()],
+        "split_candidate_families": [
+            row for family in build_split_candidate_families(
+                snapshot=snapshot, return_rows=return_rows, income=income,
+                bundles=split_bundles, executor=executor,
+            ) for row in family.to_rows()
+        ],
         "risk_models": {
             key: {"risk_model_id": model.risk_model_id, "fit_calendar_id": model.fit_calendar_id,
                   "status": "available" if model.available else "unavailable"}
@@ -173,12 +179,89 @@ def build_split_risk_model_bundles(
     return tuple(bundles)
 
 
+@dataclass(frozen=True)
+class SplitCandidateFamily:
+    """Exactly one candidate slot for every canonical config on a split."""
+
+    split_index: int
+    train_start: str | None
+    train_end: str | None
+    test_start: str | None
+    test_end: str | None
+    candidates: tuple[PortfolioCandidate, ...]
+
+    def to_rows(self) -> tuple[dict[str, Any], ...]:
+        return tuple(
+            {
+                "split_index": self.split_index,
+                "train_start": self.train_start,
+                "train_end": self.train_end,
+                "test_start": self.test_start,
+                "test_end": self.test_end,
+                "configuration_id": candidate.candidate_configuration_id,
+                "method": candidate.method,
+                "spec_key": candidate.risk_model_spec_key,
+                "spec_id": candidate.risk_model_spec_id,
+                "candidate_id": candidate.candidate_id,
+                "risk_model_id": candidate.risk_model_id,
+                "fit_calendar_id": candidate.fit_calendar_id,
+                "status": candidate.status,
+                "reason": candidate.reasons[0] if candidate.reasons else None,
+            }
+            for candidate in self.candidates
+        )
+
+
+def build_split_candidate_families(
+    *,
+    snapshot: MultivariateInputSnapshot,
+    return_rows: Sequence[Mapping[str, Any]],
+    income: Mapping[MultivariateListingKey, IncomeEvidence],
+    bundles: Sequence[SplitRiskModelBundle],
+    executor: Executor | None = None,
+) -> tuple[SplitCandidateFamily, ...]:
+    """Build the 14 canonical candidate slots from shared split-local fits."""
+    families: list[SplitCandidateFamily] = []
+    for bundle in bundles:
+        candidates: list[PortfolioCandidate] = []
+        split_return_rows = tuple(
+            row for row in return_rows
+            if bundle.train_end is None or str(row.get("date", "")) <= bundle.train_end
+        )
+        for configuration in SELECTION_V2_CONFIGURATIONS:
+            risk_model = bundle.model(configuration.risk_model_spec.spec_key)
+            built = build_candidate_set(
+                snapshot=snapshot,
+                risk_model=risk_model,
+                return_rows=split_return_rows,
+                income=income,
+                executor=executor,
+                methods=(configuration.method,),
+            )
+            if len(built) != 1:
+                raise RuntimeError("split_candidate_family_slot_count_mismatch")
+            candidates.append(replace(built[0], candidate_configuration_id=configuration.configuration_id))
+        families.append(
+            SplitCandidateFamily(
+                split_index=bundle.split_index,
+                train_start=bundle.train_start,
+                train_end=bundle.train_end,
+                test_start=bundle.test_start,
+                test_end=bundle.test_end,
+                candidates=tuple(candidates),
+            )
+        )
+    return tuple(families)
+
+
 __all__ = [
     "COMPARISON_METHODS",
     "COMPARISON_SPECS",
     "RISK_MODEL_COMPARISON_CONTRACT",
     "SplitRiskModelBundle",
+    "SplitCandidateFamily",
     "build_risk_model_comparison",
+    "build_split_candidate_families",
     "build_split_risk_model_bundles",
 ]
 
