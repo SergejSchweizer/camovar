@@ -1588,7 +1588,15 @@ class WorkspaceApplicationService:
             payload = pickle.loads(record.payload)
         except (pickle.PickleError, EOFError, AttributeError, TypeError, ValueError):
             return None
-        return payload if isinstance(payload, dict) else None
+        if not isinstance(payload, dict):
+            return None
+        # A valid checkpoint must advertise the same monotone phase that was
+        # committed beside its payload.  This prevents a truncated or
+        # hand-written payload from being treated as semantic state.
+        payload_phase = payload.get("phase")
+        if payload_phase != record.phase or not isinstance(payload_phase, int):
+            return None
+        return payload
 
     def _save_multivariate_checkpoint(
         self,
