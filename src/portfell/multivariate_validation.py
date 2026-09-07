@@ -13,7 +13,7 @@ from portfell.contract_versioning import ContractVersion, stable_contract_id
 from portfell.multivariate_candidates import PortfolioCandidate
 from portfell.multivariate_inputs import MultivariateListingKey
 
-VALIDATION_CONTRACT = ContractVersion("multivariate.validation", 8)
+VALIDATION_CONTRACT = ContractVersion("multivariate.validation", 9)
 CandidateFactory = Callable[[Sequence[Mapping[str, Any]]], Sequence[PortfolioCandidate]]
 
 

@@ -24,7 +24,7 @@ Current Multivariate baseline at the review SHA:
 - `multivariate.validation@v8`;
 - `multivariate.risk_model@v1`;
 - `multivariate.structural_walk_forward@v1`;
-- `MULTIVARIATE_EXECUTION_VERSION = multivariate_execution.clean.v5`;
+- `MULTIVARIATE_EXECUTION_VERSION = multivariate_execution.clean.v6`;
 - production covariance estimator is Ledoit-Wolf with `window_policy=full`;
 - production candidate methods are `equal_weight`, `inverse_volatility`, `minimum_variance`, `equal_risk_contribution`, `hierarchical_risk_parity`, `minimum_cvar`;
 - walk-forward policy is minimum training 100 observations, test window 21 observations, maximum 8 refits, minimum 2 completed splits, transaction-cost rate 0.0005;
@@ -322,6 +322,11 @@ Task:
 - Decision persists `warnings` and `blocking_reasons` separately.
 
 Acceptance: a configuration whose only stress issue is the distribution-cut warning can still be production-eligible; validation `v8 -> v9`; execution `clean.v5 -> clean.v6`.
+
+Git status: integrated on `main` at `baa7595`; non-blocking
+`cash_flow_evidence_only` warnings are persisted separately from blocking
+reasons and no longer disqualify an otherwise eligible Decision. Focused
+validation and Multivariate tests pass.
 
 ### PR443 — Add same-split return/drawdown evidence
 
