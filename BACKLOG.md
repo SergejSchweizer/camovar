@@ -873,8 +873,10 @@ comparison-contract evidence is recorded in `tests/migration_evidence.py` and
 covered by `tests/test_pr462_selection_v2_comparison_contract_qa.py`.
 PR463 status: integrated on `main` at `6cca12c`; split-local three-spec
 risk-model bundles persist fit identities and explicit unavailable fits.
-PR464 status: independent numerical, leakage and fit-count QA evidence is
-prepared on the QA branch; merge it before beginning PR465.
+PR464 status: integrated on `main` at `cee1463`; independent numerical,
+leakage and fit-count QA evidence is recorded in the migration test suite.
+PR465 status: exact 14-slot split-local candidate families and identity tests
+are prepared on the implementation branch; merge before beginning PR466.
 
 ### Corrective migration execution index (PR461–PR480)
 
