@@ -26,6 +26,7 @@ from portfell.multivariate_refits import build_refitted_candidate_sets
 from portfell.multivariate_risk_model import build_multivariate_risk_model
 from portfell.multivariate_risk_stress import correlation_convergence_25pct, volatility_up_25pct
 from portfell.multivariate_risk_spec import LW_FULL
+from portfell.multivariate_risk_model_comparison import build_risk_model_comparison
 from portfell.multivariate_structural_walk_forward import (
     build_structural_walk_forward_evidence,
     structural_walk_forward_rows,
@@ -45,7 +46,7 @@ from portfell.multivariate_validation import (
 from portfell.return_series import build_returns
 from portfell.table_io import JsonRow
 
-MULTIVARIATE_EXECUTION_VERSION = "multivariate_execution.clean.v16"
+MULTIVARIATE_EXECUTION_VERSION = "multivariate_execution.clean.v17"
 MULTIVARIATE_PHASES = (
     "inputs",
     "risk_model_and_candidates",
@@ -222,10 +223,14 @@ def compute_multivariate(
             refitted_candidate_sets=refitted, validation_splits=validation,
         )
         scenarios = validate_candidate_stress(candidates=candidates, return_rows=returns, executor=executor)
+        risk_model_comparison = build_risk_model_comparison(
+            snapshot=snapshot, return_rows=returns, income=income, executor=executor
+        )
         scorecards = build_candidate_scorecards(splits=validation, scenarios=scenarios)
         state.update({"phase": 5, "structure_v2": structure_v2,
                       "structural_walk_forward": structural_walk_forward,
-                      "scenarios": scenarios, "scorecards": scorecards})
+                      "scenarios": scenarios, "scorecards": scorecards,
+                      "risk_model_comparison": risk_model_comparison})
         if save_checkpoint is not None:
             save_checkpoint(5, MULTIVARIATE_PHASES[4], state)
     else:
@@ -233,6 +238,7 @@ def compute_multivariate(
         structural_walk_forward = cast(Any, state["structural_walk_forward"])
         scenarios = cast(Any, state["scenarios"])
         scorecards = cast(Any, state["scorecards"])
+        risk_model_comparison = cast(Any, state.get("risk_model_comparison", {}))
 
     if on_phase is not None and phase < 5:
         on_phase(4, MULTIVARIATE_PHASES[3])
@@ -339,6 +345,7 @@ def compute_multivariate(
         "validation": {"items": validation_rows},
         "risk_contributions": {"items": risk_contributions},
         "risk_stress": {"items": risk_stress_rows},
+        "risk_model_comparison": risk_model_comparison,
         "income_evidence": {"items": income_rows},
         "performance": build_multivariate_performance(candidates=candidates, return_rows=returns),
         "decision": decision.document,
