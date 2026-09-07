@@ -243,6 +243,34 @@ class SplitCandidateFamily:
         )
 
 
+@dataclass(frozen=True)
+class CurrentSampleCandidateFamily:
+    """The descriptive full-sample 14-configuration family."""
+
+    risk_models: tuple[tuple[str, Any], ...]
+    candidates: tuple[PortfolioCandidate, ...]
+
+    def model(self, spec_key: str) -> Any:
+        return dict(self.risk_models)[spec_key]
+
+    def to_rows(self) -> tuple[dict[str, Any], ...]:
+        return tuple(
+            {
+                "configuration_id": candidate.candidate_configuration_id,
+                "method": candidate.method,
+                "spec_key": candidate.risk_model_spec_key,
+                "spec_id": candidate.risk_model_spec_id,
+                "candidate_id": candidate.candidate_id,
+                "risk_model_id": candidate.risk_model_id,
+                "fit_calendar_id": candidate.fit_calendar_id,
+                "status": candidate.status,
+                "reason": candidate.reasons[0] if candidate.reasons else None,
+                "evidence_role": "descriptive",
+            }
+            for candidate in self.candidates
+        )
+
+
 def build_split_candidate_families(
     *,
     snapshot: MultivariateInputSnapshot,
@@ -303,6 +331,34 @@ def build_common_oos_validation(
     )
 
 
+def build_current_sample_candidate_family(
+    *,
+    snapshot: MultivariateInputSnapshot,
+    return_rows: Sequence[Mapping[str, Any]],
+    income: Mapping[MultivariateListingKey, IncomeEvidence],
+    executor: Executor | None = None,
+) -> CurrentSampleCandidateFamily:
+    """Fit at most three current-sample risk models and materialize 14 slots."""
+    models = tuple(
+        (spec.spec_key, build_multivariate_risk_model(snapshot=snapshot, return_rows=return_rows, spec=spec))
+        for spec in COMPARISON_SPECS
+    )
+    candidates: list[PortfolioCandidate] = []
+    for configuration in SELECTION_V2_CONFIGURATIONS:
+        built = build_candidate_set(
+            snapshot=snapshot,
+            risk_model=dict(models)[configuration.risk_model_spec.spec_key],
+            return_rows=return_rows,
+            income=income,
+            executor=executor,
+            methods=(configuration.method,),
+        )
+        if len(built) != 1:
+            raise RuntimeError("current_sample_family_slot_count_mismatch")
+        candidates.append(replace(built[0], candidate_configuration_id=configuration.configuration_id))
+    return CurrentSampleCandidateFamily(risk_models=models, candidates=tuple(candidates))
+
+
 __all__ = [
     "COMPARISON_METHODS",
     "COMPARISON_SPECS",
@@ -310,9 +366,11 @@ __all__ = [
     "RISK_MODEL_COMPARISON_CONTRACT",
     "SplitRiskModelBundle",
     "SplitCandidateFamily",
+    "CurrentSampleCandidateFamily",
     "build_risk_model_comparison",
     "build_split_candidate_families",
     "build_common_oos_validation",
+    "build_current_sample_candidate_family",
     "build_split_risk_model_bundles",
 ]
 

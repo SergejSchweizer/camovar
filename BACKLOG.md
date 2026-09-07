@@ -890,7 +890,10 @@ QA with sanitized stage-5 evidence is integrated on `main` at `df2cf76`.
 PR471 status: common-OOS 14-configuration Decision authority cutover and
 authority tests are integrated on `main` at `9a1d11e`.
 PR472 status: independent production-authority QA and sanitized stage-6
-evidence are prepared on the QA branch; merge before beginning PR473.
+evidence is integrated on `main` at `c4914f7`.
+PR473 status: exact current-sample 14-configuration family, shared three-model
+fits, descriptive lineage and reconciliation tests are prepared on the
+implementation branch; merge before beginning PR474.
 
 ### Corrective migration execution index (PR461–PR480)
 
