@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from concurrent.futures import Executor
 from typing import Any
 
@@ -15,7 +16,7 @@ from portfell.multivariate_risk_spec import EWMA_094, LW_FULL, LW_ROLLING_252, R
 from portfell.multivariate_validation import DEFAULT_WALK_FORWARD_POLICY, _walk_forward_starts
 from portfell.selection_v2_contract import SELECTION_V2_CONFIGURATIONS, SELECTION_V2_POLICY
 
-RISK_MODEL_COMPARISON_CONTRACT = ContractVersion("multivariate.risk_model_comparison", 1)
+RISK_MODEL_COMPARISON_CONTRACT = ContractVersion("multivariate.risk_model_comparison", 2)
 COMPARISON_SPECS = (LW_FULL, LW_ROLLING_252, EWMA_094)
 COMPARISON_METHODS = {
     "equal_weight": ("LW_FULL",),
@@ -25,6 +26,40 @@ COMPARISON_METHODS = {
     "hierarchical_risk_parity": ("LW_FULL", "LW_ROLLING_252", "EWMA_094"),
     "minimum_cvar": ("LW_FULL",),
 }
+
+
+@dataclass(frozen=True)
+class SplitRiskModelBundle:
+    """The three training-only risk-model fits shared by one OOS split."""
+
+    split_index: int
+    train_start: str | None
+    train_end: str | None
+    test_start: str | None
+    test_end: str | None
+    models: tuple[tuple[str, Any], ...]
+
+    def model(self, spec_key: str) -> Any:
+        return dict(self.models)[spec_key]
+
+    def to_rows(self) -> tuple[dict[str, Any], ...]:
+        return tuple(
+            {
+                "split_index": self.split_index,
+                "train_start": self.train_start,
+                "train_end": self.train_end,
+                "test_start": self.test_start,
+                "test_end": self.test_end,
+                "spec_key": spec_key,
+                "spec_id": model.spec_id,
+                "risk_model_id": model.risk_model_id,
+                "fit_calendar_id": model.fit_calendar_id,
+                "status": "available" if model.available else "unavailable",
+                "reason": model.availability_reasons[0] if model.availability_reasons else None,
+                "observation_count": model.observation_count,
+            }
+            for spec_key, model in self.models
+        )
 
 
 def build_risk_model_comparison(
@@ -42,6 +77,9 @@ def build_risk_model_comparison(
     split_evidence: list[dict[str, Any]] = []
     dates = _common_dates(return_rows, snapshot.listing_keys)
     starts = _walk_forward_starts(dates, DEFAULT_WALK_FORWARD_POLICY)
+    split_bundles = build_split_risk_model_bundles(
+        snapshot=snapshot, return_rows=return_rows, dates=dates, starts=starts
+    )
     for method, spec_keys in COMPARISON_METHODS.items():
         for spec_key in spec_keys:
             spec = next(item for item in COMPARISON_SPECS if item.spec_key == spec_key)
@@ -59,17 +97,21 @@ def build_risk_model_comparison(
                 "status": candidate.status,
                 "reason": candidate.reasons[0] if candidate.reasons else None,
             } for candidate in candidates if candidate.method == method)
-            for start in starts:
+            for bundle in split_bundles:
+                split_model = bundle.model(spec_key)
                 split_evidence.append({
-                    "split_index": starts.index(start),
-                    "train_start": dates[0] if dates else None,
-                    "train_end": dates[start - 1] if start else None,
-                    "test_start": dates[start] if start < len(dates) else None,
-                    "test_end": dates[min(len(dates) - 1, start + DEFAULT_WALK_FORWARD_POLICY.test_window_observations - 1)] if dates else None,
+                    "split_index": bundle.split_index,
+                    "train_start": bundle.train_start,
+                    "train_end": bundle.train_end,
+                    "test_start": bundle.test_start,
+                    "test_end": bundle.test_end,
                     "method": method,
                     "spec_key": spec.spec_key,
                     "spec_id": spec.spec_id,
-                    "status": "scheduled",
+                    "risk_model_id": split_model.risk_model_id,
+                    "fit_calendar_id": split_model.fit_calendar_id,
+                    "status": "scheduled" if split_model.available else "unavailable",
+                    "reason": split_model.availability_reasons[0] if split_model.availability_reasons else None,
                 })
     return {
         "contract_version": RISK_MODEL_COMPARISON_CONTRACT.qualified_name,
@@ -80,6 +122,7 @@ def build_risk_model_comparison(
         "full_sample_evidence": evidence,
         "common_split_count": len(starts),
         "common_split_evidence": split_evidence,
+        "split_risk_model_bundles": [row for bundle in split_bundles for row in bundle.to_rows()],
         "risk_models": {
             key: {"risk_model_id": model.risk_model_id, "fit_calendar_id": model.fit_calendar_id,
                   "status": "available" if model.available else "unavailable"}
@@ -88,7 +131,56 @@ def build_risk_model_comparison(
     }
 
 
-__all__ = ["COMPARISON_METHODS", "COMPARISON_SPECS", "RISK_MODEL_COMPARISON_CONTRACT", "build_risk_model_comparison"]
+def build_split_risk_model_bundles(
+    *,
+    snapshot: MultivariateInputSnapshot,
+    return_rows: Sequence[Mapping[str, Any]],
+    dates: Sequence[str] | None = None,
+    starts: Sequence[int] | None = None,
+) -> tuple[SplitRiskModelBundle, ...]:
+    """Fit each risk specification once per split using training rows only.
+
+    The tuple is ordered by split and canonical specification order.  An
+    unavailable fit remains an explicit artifact rather than being dropped.
+    """
+    common_dates = tuple(dates) if dates is not None else _common_dates(return_rows, snapshot.listing_keys)
+    split_starts = tuple(starts) if starts is not None else _walk_forward_starts(common_dates, DEFAULT_WALK_FORWARD_POLICY)
+    bundles: list[SplitRiskModelBundle] = []
+    for split_index, start in enumerate(split_starts):
+        train_dates = set(common_dates[:start])
+        training_rows = tuple(row for row in return_rows if str(row.get("date", "")) in train_dates)
+        test_end_index = min(
+            len(common_dates) - 1,
+            start + DEFAULT_WALK_FORWARD_POLICY.test_window_observations - 1,
+        )
+        models = tuple(
+            (
+                spec.spec_key,
+                build_multivariate_risk_model(snapshot=snapshot, return_rows=training_rows, spec=spec),
+            )
+            for spec in COMPARISON_SPECS
+        )
+        bundles.append(
+            SplitRiskModelBundle(
+                split_index=split_index,
+                train_start=common_dates[0] if train_dates else None,
+                train_end=common_dates[start - 1] if start else None,
+                test_start=common_dates[start] if start < len(common_dates) else None,
+                test_end=common_dates[test_end_index] if common_dates else None,
+                models=models,
+            )
+        )
+    return tuple(bundles)
+
+
+__all__ = [
+    "COMPARISON_METHODS",
+    "COMPARISON_SPECS",
+    "RISK_MODEL_COMPARISON_CONTRACT",
+    "SplitRiskModelBundle",
+    "build_risk_model_comparison",
+    "build_split_risk_model_bundles",
+]
 
 
 def _common_dates(
