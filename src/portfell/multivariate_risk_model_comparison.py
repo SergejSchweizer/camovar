@@ -13,6 +13,7 @@ from portfell.multivariate_inputs import MultivariateInputSnapshot, Multivariate
 from portfell.multivariate_risk_model import build_multivariate_risk_model
 from portfell.multivariate_risk_spec import EWMA_094, LW_FULL, LW_ROLLING_252, RiskModelSpecification
 from portfell.multivariate_validation import DEFAULT_WALK_FORWARD_POLICY, _walk_forward_starts
+from portfell.selection_v2_contract import SELECTION_V2_CONFIGURATIONS, SELECTION_V2_POLICY
 
 RISK_MODEL_COMPARISON_CONTRACT = ContractVersion("multivariate.risk_model_comparison", 1)
 COMPARISON_SPECS = (LW_FULL, LW_ROLLING_252, EWMA_094)
@@ -36,7 +37,7 @@ def build_risk_model_comparison(
         models[spec.spec_key] = build_multivariate_risk_model(
             snapshot=snapshot, return_rows=return_rows, spec=spec
         )
-    definitions: list[dict[str, Any]] = []
+    definitions: list[dict[str, Any]] = [item.to_row() for item in SELECTION_V2_CONFIGURATIONS]
     evidence: list[dict[str, Any]] = []
     split_evidence: list[dict[str, Any]] = []
     dates = _common_dates(return_rows, snapshot.listing_keys)
@@ -45,7 +46,6 @@ def build_risk_model_comparison(
         for spec_key in spec_keys:
             spec = next(item for item in COMPARISON_SPECS if item.spec_key == spec_key)
             model = models[spec_key]
-            definitions.append({"method": method, "spec_key": spec.spec_key, "spec_id": spec.spec_id})
             candidates = build_candidate_set(
                 snapshot=snapshot, risk_model=model, return_rows=return_rows,
                 income=income, executor=executor
@@ -73,6 +73,8 @@ def build_risk_model_comparison(
                 })
     return {
         "contract_version": RISK_MODEL_COMPARISON_CONTRACT.qualified_name,
+        "selection_v2_policy": SELECTION_V2_POLICY.to_row(),
+        "selection_v2_policy_fingerprint": SELECTION_V2_POLICY.fingerprint,
         "configuration_count": len(definitions),
         "configurations": definitions,
         "full_sample_evidence": evidence,
