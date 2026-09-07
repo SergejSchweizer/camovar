@@ -24,7 +24,7 @@ Current Multivariate baseline at the review SHA:
 - `multivariate.validation@v10`;
 - `multivariate.risk_model@v1`;
 - `multivariate.structural_walk_forward@v1`;
-- `MULTIVARIATE_EXECUTION_VERSION = multivariate_execution.clean.v9`;
+- `MULTIVARIATE_EXECUTION_VERSION = multivariate_execution.clean.v10`;
 - production covariance estimator is Ledoit-Wolf with `window_policy=full`;
 - production candidate methods are `equal_weight`, `inverse_volatility`, `minimum_variance`, `equal_risk_contribution`, `hierarchical_risk_parity`, `minimum_cvar`;
 - walk-forward policy is minimum training 100 observations, test window 21 observations, maximum 8 refits, minimum 2 completed splits, transaction-cost rate 0.0005;
@@ -416,6 +416,10 @@ Frozen ordering:
 Missing secondary metrics rank worse than available values. Primary score always dominates; no weighted composite is allowed.
 
 Acceptance: each tie-break level has independent fixture; execution `clean.v9 -> clean.v10`.
+
+Git status: integrated on `main` at `9fa2af3`; Decision ranking now applies
+deterministic turnover, HHI and configuration-ID tie-breaks and records the
+sequence in the Decision artifact. Focused decision tests pass.
 
 ### PR447 — Remove the legacy standalone scorecard authority
 
