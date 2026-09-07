@@ -322,6 +322,6 @@ def test_validation_helpers_preserve_unavailable_and_empty_boundaries() -> None:
         None,
         None,
     )
-    assert _portfolio_returns_by_date((unavailable,), []) == {"minimum_variance": {}}
+    assert _portfolio_returns_by_date((unavailable,), []) == {"candidate-unavailable": {}}
     assert _seeded_block_bootstrap((), 0, Random(1)) == ()
     assert _sortino(()) is None

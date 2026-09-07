@@ -45,7 +45,7 @@ from portfell.multivariate_validation import (
 from portfell.return_series import build_returns
 from portfell.table_io import JsonRow
 
-MULTIVARIATE_EXECUTION_VERSION = "multivariate_execution.clean.v15"
+MULTIVARIATE_EXECUTION_VERSION = "multivariate_execution.clean.v16"
 MULTIVARIATE_PHASES = (
     "inputs",
     "risk_model_and_candidates",

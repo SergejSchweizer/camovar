@@ -13,7 +13,7 @@ from portfell.contract_versioning import ContractVersion, stable_contract_id
 from portfell.multivariate_candidates import PortfolioCandidate
 from portfell.multivariate_inputs import MultivariateListingKey
 
-VALIDATION_CONTRACT = ContractVersion("multivariate.validation", 12)
+VALIDATION_CONTRACT = ContractVersion("multivariate.validation", 13)
 CandidateFactory = Callable[[Sequence[Mapping[str, Any]]], Sequence[PortfolioCandidate]]
 
 
@@ -220,10 +220,17 @@ def validate_candidates(
             evaluated = (
                 tuple(candidate_factory(training_rows)) if candidate_factory else tuple(candidates)
             )
-        by_method = {candidate.method: candidate for candidate in evaluated}
+        keys = [_configuration_key(candidate) for candidate in evaluated]
+        if len(keys) != len(set(keys)):
+            raise ValueError("duplicate_candidate_configuration_id")
+        by_configuration = {
+            _configuration_key(candidate): candidate for candidate in evaluated
+        }
         metric_tasks = tuple(
             (candidate, _candidate_returns_for_dates(candidate, indexed_returns, test_dates))
-            for candidate in (by_method.get(requested.method) for requested in candidates)
+            for candidate in (
+                by_configuration.get(_configuration_key(requested)) for requested in candidates
+            )
             if candidate is not None and candidate.status == "feasible"
         )
         metric_results = (
@@ -231,13 +238,15 @@ def validate_candidates(
             if executor is not None
             else tuple(_validation_candidate_metrics(task) for task in metric_tasks)
         )
-        metrics_by_method = {item[0].method: item[1:] for item in metric_results}
+        metrics_by_configuration = {
+            _configuration_key(item[0]): item[1:] for item in metric_results
+        }
         for requested in candidates:
-            candidate = by_method.get(requested.method)
+            candidate = by_configuration.get(_configuration_key(requested))
             if candidate is None or candidate.status != "feasible":
                 results.append(_unavailable(requested, "candidate_unavailable"))
                 continue
-            test, metrics = metrics_by_method[candidate.method]
+            test, metrics = metrics_by_configuration[_configuration_key(candidate)]
             pre_cost, volatility, sharpe, sortino, cvar, max_drawdown = metrics
             configuration_key = candidate.candidate_configuration_id or candidate.candidate_id
             previous = previous_weights.get(configuration_key)
@@ -315,7 +324,7 @@ def validate_candidate_stress(
     """
 
     indexed = _portfolio_returns_by_date(candidates, return_rows)
-    tasks = tuple((candidate, tuple(indexed.get(candidate.method, {}).values()), policy) for candidate in candidates)
+    tasks = tuple((candidate, tuple(indexed.get(_configuration_key(candidate), {}).values()), policy) for candidate in candidates)
     groups = (
         tuple(executor.map(_candidate_stress_rows, tasks))
         if executor is not None
@@ -420,22 +429,30 @@ def _portfolio_returns_by_date(
     indexed = _index_return_rows(rows)
     output: dict[str, dict[str, float]] = {}
     for candidate in candidates:
+        configuration_key = _configuration_key(candidate)
+        if configuration_key in output:
+            raise ValueError("duplicate_candidate_configuration_id")
         if candidate.status != "feasible":
-            output[candidate.method] = {}
+            output[configuration_key] = {}
             continue
         weights = {key.as_tuple(): weight for key, weight in candidate.weights}
         keys = tuple(weights)
         if any(key not in indexed for key in keys):
-            output[candidate.method] = {}
+            output[configuration_key] = {}
             continue
         common: set[str] = set(indexed[keys[0]]) if keys else set()
         for key in keys[1:]:
             common &= set(indexed[key])
-        output[candidate.method] = {
+        output[configuration_key] = {
             day: sum(weight * indexed[key][day] for key, weight in weights.items())
             for day in common
         }
     return output
+
+
+def _configuration_key(candidate: PortfolioCandidate) -> str:
+    """Return the unique semantic configuration key for a candidate."""
+    return candidate.candidate_configuration_id or candidate.candidate_id
 
 
 def _index_return_rows(
