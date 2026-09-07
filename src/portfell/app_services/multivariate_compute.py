@@ -45,8 +45,11 @@ from portfell.multivariate_validation import (
 )
 from portfell.return_series import build_returns
 from portfell.table_io import JsonRow
+from portfell.contract_versioning import ContractVersion
 
-MULTIVARIATE_EXECUTION_VERSION = "multivariate_execution.clean.v17"
+DECISION_CONTRACT = ContractVersion("multivariate.decision", 2)
+
+MULTIVARIATE_EXECUTION_VERSION = "multivariate_execution.clean.v18"
 MULTIVARIATE_PHASES = (
     "inputs",
     "risk_model_and_candidates",
@@ -405,6 +408,7 @@ def _select_decision(
             production_eligible=False,
             reason="oos_decision_evidence_unavailable",
             document={
+                "contract_version": DECISION_CONTRACT.qualified_name,
                 "objective": objective,
                 "available": False,
                 "production_eligible": False,
@@ -431,6 +435,7 @@ def _select_decision(
         and not scenario_reasons
     )
     document: JsonRow = {
+        "contract_version": DECISION_CONTRACT.qualified_name,
         "objective": objective,
         "objective_metric": (
             "median_sharpe_ratio" if objective == "return_risk"
@@ -451,6 +456,13 @@ def _select_decision(
         "scenario_reasons": scenario_reasons,
         "warning_reasons": list(scorecard.warning_reasons),
         "tie_break": "median_turnover_ascending_then_median_hhi_ascending_then_configuration_id_ascending",
+        "risk_model_spec_key": getattr(candidate, "risk_model_spec_key", ""),
+        "risk_model_spec_id": getattr(candidate, "risk_model_spec_id", ""),
+        "risk_model_id": getattr(candidate, "risk_model_id", None),
+        "fit_calendar_id": getattr(candidate, "fit_calendar_id", ""),
+        "comparison_split_count": scorecard.completed_split_count,
+        "risk_stress_model": "LW_FULL",
+        "full_history_evidence_role": "descriptive_non_selection",
     }
     return MultivariateDecision(
         objective=objective,
