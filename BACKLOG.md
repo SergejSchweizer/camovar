@@ -854,6 +854,17 @@ Acceptance must independently prove on exact head SHA:
 - objective is part of run/Decision identity and a different objective cannot reuse a Decision as if it were the same request;
 
 Git status: integrated on `main` at `046dd81`; closeout invariants cover the six allocator methods, three risk specs, exact 14-configuration manifest, canonical scenario names and the absence of the retired scorecard authority.
+
+## 6. Corrective migration authority (PR460–PR480)
+
+PR460 supersedes the earlier completion claim because the current runtime still
+needs a measured split-local 14-configuration OOS implementation. The complete
+atomic migration plan, acceptance criteria and QA evidence contract are in
+[PORTFOLIO_SELECTION_V2_MIGRATION.md](PORTFOLIO_SELECTION_V2_MIGRATION.md).
+
+Git status: PR460 merged on `main` at `79b16e8`; its planning document is now
+part of the repository. PR461–PR480 are the next executable work orders and
+must be completed linearly before Selection v2 can be declared final.
 - Multivariate readiness requires matching current Selection + Bivariate lineage;
 - no manual allocator/spec/winner selector exists in production workflow;
 - UI clearly separates `Selection Evidence` from `Portfolio Diagnostics`;
