@@ -171,6 +171,7 @@ class CandidateScorecard:
     median_turnover: float | None = None
     median_herfindahl_index: float | None = None
     warning_reasons: tuple[str, ...] = ()
+    median_return_drawdown_ratio: float | None = None
 
 
 def validate_candidates(
@@ -365,6 +366,11 @@ def build_candidate_scorecards(
         drawdowns = sorted(abs(item.max_drawdown) for item in completed if item.max_drawdown is not None)
         turnovers = sorted(item.turnover for item in completed)
         hhis = sorted(item.herfindahl_index for item in completed if item.herfindahl_index is not None)
+        return_drawdown = sorted(
+            item.same_split_return_drawdown_ratio
+            for item in completed
+            if item.same_split_return_drawdown_ratio is not None
+        )
         all_reasons = {
             str(item.reason)
             for item in (*candidate_splits, *candidate_scenarios)
@@ -397,6 +403,7 @@ def build_candidate_scorecards(
                 median_turnover=_median(turnovers),
                 median_herfindahl_index=_median(hhis),
                 warning_reasons=warnings,
+                median_return_drawdown_ratio=_median(return_drawdown),
             )
         )
     return tuple(scorecards)

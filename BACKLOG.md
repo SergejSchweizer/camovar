@@ -21,10 +21,10 @@ Market observations are consumed through the current market-data gateway. Multiv
 Current Multivariate baseline at the review SHA:
 
 - `multivariate.candidates@v9`;
-- `multivariate.validation@v8`;
+- `multivariate.validation@v10`;
 - `multivariate.risk_model@v1`;
 - `multivariate.structural_walk_forward@v1`;
-- `MULTIVARIATE_EXECUTION_VERSION = multivariate_execution.clean.v6`;
+- `MULTIVARIATE_EXECUTION_VERSION = multivariate_execution.clean.v7`;
 - production covariance estimator is Ledoit-Wolf with `window_policy=full`;
 - production candidate methods are `equal_weight`, `inverse_volatility`, `minimum_variance`, `equal_risk_contribution`, `hierarchical_risk_parity`, `minimum_cvar`;
 - walk-forward policy is minimum training 100 observations, test window 21 observations, maximum 8 refits, minimum 2 completed splits, transaction-cost rate 0.0005;
@@ -343,6 +343,10 @@ Owned paths: `src/portfell/multivariate_validation.py`, focused numerical tests,
 Task: for each completed split compute `post_cost_return / abs(max_drawdown)` only when drawdown is available and non-zero; aggregate split ratios into `median_return_drawdown_ratio`.
 
 Acceptance: ratio is formed within split before median; zero/unavailable drawdown is unavailable, never epsilon/infinity; validation `v9 -> v10`; execution `clean.v6 -> clean.v7`.
+
+Git status: integrated on `main` at `1c7fffe`; each completed validation
+split now persists its post-cost return-to-absolute-drawdown ratio computed
+within the same test window. Focused Multivariate validation tests pass.
 
 ### PR444 — Make `return_risk` use median OOS Sharpe
 
