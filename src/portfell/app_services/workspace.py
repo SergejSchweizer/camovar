@@ -1594,6 +1594,12 @@ class WorkspaceApplicationService:
             return None
         if not isinstance(payload, dict):
             return None
+        if payload.get("checkpoint_contract") != "multivariate.checkpoint@v2":
+            return None
+        if payload.get("dataset_digest") != dataset_digest:
+            return None
+        if payload.get("execution_version") != MULTIVARIATE_EXECUTION_VERSION:
+            return None
         # A valid checkpoint must advertise the same monotone phase that was
         # committed beside its payload.  This prevents a truncated or
         # hand-written payload from being treated as semantic state.
@@ -1613,12 +1619,18 @@ class WorkspaceApplicationService:
         save = getattr(self._state, "put_multivariate_checkpoint", None)
         if not callable(save):
             return
+        checkpoint_payload = {
+            **dict(payload),
+            "checkpoint_contract": "multivariate.checkpoint@v2",
+            "dataset_digest": dataset_digest,
+            "execution_version": MULTIVARIATE_EXECUTION_VERSION,
+        }
         save(
             dataset_digest=dataset_digest,
             algorithm_version=MULTIVARIATE_EXECUTION_VERSION,
             phase=phase,
             phase_name=phase_name,
-            payload=pickle.dumps(dict(payload), protocol=pickle.HIGHEST_PROTOCOL),
+            payload=pickle.dumps(checkpoint_payload, protocol=pickle.HIGHEST_PROTOCOL),
         )
 
     def _delete_multivariate_checkpoint(self, dataset_digest: str) -> None:
