@@ -14,7 +14,7 @@ from portfell.multivariate_risk_model_comparison import (
 
 
 def _fixture(rows_count: int = 320):
-    keys = (MultivariateListingKey("A", "X", "A"), MultivariateListingKey("B", "X", "B"))
+    keys = tuple(MultivariateListingKey(chr(65 + index), "X", chr(65 + index)) for index in range(6))
     dependencies = MultivariateInputDependencies(
         project_id="p", project_snapshot_id="s", metadata_selection_id="m", univariate_run_id="u",
         univariate_selection_id="us", bivariate_run_id="b", bivariate_status="complete",
@@ -32,7 +32,7 @@ def _fixture(rows_count: int = 320):
     first = date(2024, 1, 1)
     for index in range(rows_count):
         current = (first + timedelta(days=index)).isoformat()
-        for key, value in zip(keys, (0.001, 0.002)):
+        for key, value in zip(keys, (0.001, 0.002, 0.003, 0.0015, 0.0025, 0.0035)):
             rows.append({"isin": key.isin, "exchange": key.exchange, "code": key.code,
                          "date": current, "return": value + index * 0.000001})
     return snapshot, rows

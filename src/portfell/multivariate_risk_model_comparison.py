@@ -13,11 +13,23 @@ from portfell.multivariate_candidates import PortfolioCandidate, build_candidate
 from portfell.multivariate_inputs import MultivariateInputSnapshot, MultivariateListingKey
 from portfell.multivariate_risk_model import build_multivariate_risk_model
 from portfell.multivariate_risk_spec import EWMA_094, LW_FULL, LW_ROLLING_252, RiskModelSpecification
-from portfell.multivariate_validation import DEFAULT_WALK_FORWARD_POLICY, _walk_forward_starts
+from portfell.multivariate_validation import (
+    DEFAULT_WALK_FORWARD_POLICY,
+    WalkForwardPolicy,
+    _walk_forward_starts,
+    validate_candidates,
+    walk_forward_validation_row,
+)
 from portfell.selection_v2_contract import SELECTION_V2_CONFIGURATIONS, SELECTION_V2_POLICY
 
 RISK_MODEL_COMPARISON_CONTRACT = ContractVersion("multivariate.risk_model_comparison", 2)
 COMPARISON_SPECS = (LW_FULL, LW_ROLLING_252, EWMA_094)
+COMPARISON_WALK_FORWARD_POLICY = WalkForwardPolicy(
+    minimum_training_observations=252,
+    test_window_observations=21,
+    maximum_refit_count=8,
+    minimum_completed_splits=2,
+)
 COMPARISON_METHODS = {
     "equal_weight": ("LW_FULL",),
     "inverse_volatility": ("LW_FULL", "LW_ROLLING_252", "EWMA_094"),
@@ -76,9 +88,13 @@ def build_risk_model_comparison(
     evidence: list[dict[str, Any]] = []
     split_evidence: list[dict[str, Any]] = []
     dates = _common_dates(return_rows, snapshot.listing_keys)
-    starts = _walk_forward_starts(dates, DEFAULT_WALK_FORWARD_POLICY)
+    starts = _walk_forward_starts(dates, COMPARISON_WALK_FORWARD_POLICY)
     split_bundles = build_split_risk_model_bundles(
         snapshot=snapshot, return_rows=return_rows, dates=dates, starts=starts
+    )
+    split_families = build_split_candidate_families(
+        snapshot=snapshot, return_rows=return_rows, income=income,
+        bundles=split_bundles, executor=executor,
     )
     for method, spec_keys in COMPARISON_METHODS.items():
         for spec_key in spec_keys:
@@ -123,11 +139,11 @@ def build_risk_model_comparison(
         "common_split_count": len(starts),
         "common_split_evidence": split_evidence,
         "split_risk_model_bundles": [row for bundle in split_bundles for row in bundle.to_rows()],
-        "split_candidate_families": [
-            row for family in build_split_candidate_families(
-                snapshot=snapshot, return_rows=return_rows, income=income,
-                bundles=split_bundles, executor=executor,
-            ) for row in family.to_rows()
+        "split_candidate_families": [row for family in split_families for row in family.to_rows()],
+        "common_oos_validation": [
+            row for item in build_common_oos_validation(
+                return_rows=return_rows, families=split_families, executor=executor,
+            ) for row in (walk_forward_validation_row(item),)
         ],
         "risk_models": {
             key: {"risk_model_id": model.risk_model_id, "fit_calendar_id": model.fit_calendar_id,
@@ -150,7 +166,7 @@ def build_split_risk_model_bundles(
     unavailable fit remains an explicit artifact rather than being dropped.
     """
     common_dates = tuple(dates) if dates is not None else _common_dates(return_rows, snapshot.listing_keys)
-    split_starts = tuple(starts) if starts is not None else _walk_forward_starts(common_dates, DEFAULT_WALK_FORWARD_POLICY)
+    split_starts = tuple(starts) if starts is not None else _walk_forward_starts(common_dates, COMPARISON_WALK_FORWARD_POLICY)
     bundles: list[SplitRiskModelBundle] = []
     for split_index, start in enumerate(split_starts):
         train_dates = set(common_dates[:start])
@@ -254,14 +270,34 @@ def build_split_candidate_families(
     return tuple(families)
 
 
+def build_common_oos_validation(
+    *,
+    return_rows: Sequence[Mapping[str, Any]],
+    families: Sequence[SplitCandidateFamily],
+    executor: Executor | None = None,
+) -> tuple[Any, ...]:
+    """Measure every split-local candidate on shared 21-observation windows."""
+    if not families:
+        return ()
+    return validate_candidates(
+        candidates=families[0].candidates,
+        return_rows=return_rows,
+        policy=COMPARISON_WALK_FORWARD_POLICY,
+        precomputed_candidates=tuple(family.candidates for family in families),
+        executor=executor,
+    )
+
+
 __all__ = [
     "COMPARISON_METHODS",
     "COMPARISON_SPECS",
+    "COMPARISON_WALK_FORWARD_POLICY",
     "RISK_MODEL_COMPARISON_CONTRACT",
     "SplitRiskModelBundle",
     "SplitCandidateFamily",
     "build_risk_model_comparison",
     "build_split_candidate_families",
+    "build_common_oos_validation",
     "build_split_risk_model_bundles",
 ]
 

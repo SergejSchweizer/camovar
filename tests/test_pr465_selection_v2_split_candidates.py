@@ -10,7 +10,7 @@ from test_pr463_selection_v2_split_risk_models import _fixture
 
 def test_each_split_has_exactly_fourteen_joinable_candidate_slots() -> None:
     snapshot, rows = _fixture()
-    bundles = build_split_risk_model_bundles(snapshot=snapshot, return_rows=rows)
+    bundles = build_split_risk_model_bundles(snapshot=snapshot, return_rows=rows, starts=(100, 252))
     families = build_split_candidate_families(
         snapshot=snapshot, return_rows=rows, income={}, bundles=bundles
     )
@@ -37,7 +37,7 @@ def test_same_method_different_specs_are_not_overwritten() -> None:
 
 def test_candidate_slot_status_is_explicit_when_risk_fit_unavailable() -> None:
     snapshot, rows = _fixture()
-    bundles = build_split_risk_model_bundles(snapshot=snapshot, return_rows=rows)
+    bundles = build_split_risk_model_bundles(snapshot=snapshot, return_rows=rows, starts=(100, 252))
     family = build_split_candidate_families(
         snapshot=snapshot, return_rows=rows, income={}, bundles=bundles[:1]
     )[0]

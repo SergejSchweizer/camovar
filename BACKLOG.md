@@ -878,7 +878,10 @@ leakage and fit-count QA evidence is recorded in the migration test suite.
 PR465 status: exact 14-slot split-local candidate families and identity tests
 are integrated on `main` at `0992c1c`.
 PR466 status: independent 14-slot identity/completeness QA evidence is
-prepared on the QA branch; merge it before beginning PR467.
+integrated on `main` at `30628f0`.
+PR467 status: measured common-split OOS validation for all 14 configurations
+and lineage tests are prepared on the implementation branch; merge before
+beginning PR468.
 
 ### Corrective migration execution index (PR461–PR480)
 
