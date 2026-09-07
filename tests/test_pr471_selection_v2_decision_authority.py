@@ -1,4 +1,5 @@
 from portfell.app_services.multivariate_compute import _select_common_oos_decision
+from types import SimpleNamespace
 
 
 def _comparison(objective="return_risk"):
@@ -23,10 +24,14 @@ def _comparison(objective="return_risk"):
 
 def test_decision_uses_common_oos_configuration_and_exact_objective() -> None:
     for objective in ("return_risk", "return_drawdown", "minimum_risk"):
-        result = _select_common_oos_decision(objective=objective, risk_model_comparison=_comparison(objective))
+        current = SimpleNamespace(
+            candidate_configuration_id="cfg-ewma", candidate_id="candidate-current",
+            status="feasible", risk_model_id="risk-ewma", fit_calendar_id="calendar-ewma",
+        )
+        result = _select_common_oos_decision(objective=objective, risk_model_comparison=_comparison(objective), current_sample_candidates=(current,))
         assert result.available and result.production_eligible
         assert result.objective == objective
-        assert result.winning_candidate_id == "cfg-ewma"
+        assert result.winning_candidate_id == "candidate-current"
         assert result.document["selection_authority"] == "common_oos_14_config"
         assert result.document["risk_model_spec_key"] == "EWMA_094"
 

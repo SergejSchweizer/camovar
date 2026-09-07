@@ -26,7 +26,10 @@ from portfell.multivariate_refits import build_refitted_candidate_sets
 from portfell.multivariate_risk_model import build_multivariate_risk_model
 from portfell.multivariate_risk_stress import correlation_convergence_25pct, volatility_up_25pct
 from portfell.multivariate_risk_spec import LW_FULL
-from portfell.multivariate_risk_model_comparison import build_risk_model_comparison
+from portfell.multivariate_risk_model_comparison import (
+    build_current_sample_candidate_family,
+    build_risk_model_comparison,
+)
 from portfell.multivariate_structural_walk_forward import (
     build_structural_walk_forward_evidence,
     structural_walk_forward_rows,
@@ -229,10 +232,14 @@ def compute_multivariate(
         risk_model_comparison = build_risk_model_comparison(
             snapshot=snapshot, return_rows=returns, income=income, executor=executor
         )
+        current_sample_family = build_current_sample_candidate_family(
+            snapshot=snapshot, return_rows=returns, income=income, executor=executor,
+        )
         scorecards = build_candidate_scorecards(splits=validation, scenarios=scenarios)
         state.update({"phase": 5, "structure_v2": structure_v2,
                       "structural_walk_forward": structural_walk_forward,
                       "scenarios": scenarios, "scorecards": scorecards,
+                      "current_sample_family": current_sample_family,
                       "risk_model_comparison": risk_model_comparison})
         if save_checkpoint is not None:
             save_checkpoint(5, MULTIVARIATE_PHASES[4], state)
@@ -241,20 +248,27 @@ def compute_multivariate(
         structural_walk_forward = cast(Any, state["structural_walk_forward"])
         scenarios = cast(Any, state["scenarios"])
         scorecards = cast(Any, state["scorecards"])
+        current_sample_family = cast(Any, state.get("current_sample_family"))
         risk_model_comparison = cast(Any, state.get("risk_model_comparison", {}))
+        if current_sample_family is None:
+            current_sample_family = build_current_sample_candidate_family(
+                snapshot=snapshot, return_rows=returns, income=income, executor=executor,
+            )
 
     if on_phase is not None and phase < 5:
         on_phase(4, MULTIVARIATE_PHASES[3])
         on_phase(5, MULTIVARIATE_PHASES[4])
     decision = _select_common_oos_decision(
         objective=objective, risk_model_comparison=risk_model_comparison,
+        current_sample_candidates=current_sample_family.candidates,
     )
     state.update({"phase": 6, "decision": decision})
     if save_checkpoint is not None:
         save_checkpoint(6, MULTIVARIATE_PHASES[5], state)
     if on_phase is not None and phase < 6:
         on_phase(6, MULTIVARIATE_PHASES[5])
-    candidate_rows = [_candidate_row(item) for item in candidates]
+    current_candidates = tuple(current_sample_family.candidates)
+    candidate_rows = [_candidate_row(item) for item in current_candidates]
     risk_contributions = [
         {
             "candidate_id": candidate.candidate_id,
@@ -273,15 +287,19 @@ def compute_multivariate(
             "absolute_risk_contribution": contribution.absolute_risk_contribution,
             "percent_risk_contribution": contribution.percent_risk_contribution,
         }
-        for candidate in candidates
+        for candidate in current_candidates
         for contribution in candidate.risk_contributions
     ]
     risk_stress_rows = [
         result.to_row()
-        for candidate in candidates
+        for candidate in current_candidates
         for result in (
-            volatility_up_25pct(risk_model=risk, candidate=candidate),
-            correlation_convergence_25pct(risk_model=risk, candidate=candidate),
+            volatility_up_25pct(
+                risk_model=current_sample_family.model(candidate.risk_model_spec_key), candidate=candidate
+            ),
+            correlation_convergence_25pct(
+                risk_model=current_sample_family.model(candidate.risk_model_spec_key), candidate=candidate
+            ),
         )
     ]
     income_rows = [_income_row(key, evidence) for key, evidence in sorted(income.items())]
@@ -361,7 +379,8 @@ def compute_multivariate(
         "risk_stress": {"items": risk_stress_rows},
         "risk_model_comparison": risk_model_comparison,
         "income_evidence": {"items": income_rows},
-        "performance": build_multivariate_performance(candidates=candidates, return_rows=returns),
+        "current_sample_family": {"items": list(current_sample_family.to_rows())},
+        "performance": build_multivariate_performance(candidates=current_candidates, return_rows=returns),
         "decision": decision.document,
         "market_source": {
             "snapshot_id": market_snapshot_id,
@@ -385,6 +404,7 @@ def compute_multivariate(
 
 def _select_common_oos_decision(
     *, objective: str, risk_model_comparison: Mapping[str, Any],
+    current_sample_candidates: Sequence[PortfolioCandidate] = (),
 ) -> MultivariateDecision:
     """Select only from persisted configuration-keyed common-OOS rankings."""
     rankings = risk_model_comparison.get("configuration_rankings", {})
@@ -406,19 +426,29 @@ def _select_common_oos_decision(
             reason="common_oos_decision_evidence_unavailable", document=document,
         )
     winner = ordered[0]
-    available = int(winner.get("completed_split_count", 0)) >= 2
+    current_by_configuration = {
+        candidate.candidate_configuration_id: candidate for candidate in current_sample_candidates
+    }
+    current = current_by_configuration.get(str(winner.get("configuration_id", "")))
+    available = (
+        int(winner.get("completed_split_count", 0)) >= 2
+        and current is not None
+        and current.status == "feasible"
+    )
     document = {
         "contract_version": DECISION_CONTRACT.qualified_name,
         "objective": objective,
         "objective_metric": "median_sharpe_ratio" if objective == "return_risk" else (
             "median_return_drawdown_ratio" if objective == "return_drawdown" else "minimum_volatility"
         ),
-        "winning_candidate_id": winner.get("configuration_id", "unavailable"),
+        "winning_candidate_id": current.candidate_id if available and current is not None else "unavailable",
         "winning_configuration_id": winner.get("configuration_id", "unavailable"),
         "requested_method": winner.get("method", "unavailable"),
         "actual_method": winner.get("method", "unavailable"),
         "risk_model_spec_key": winner.get("spec_key", ""),
         "risk_model_spec_id": winner.get("risk_model_spec_id", ""),
+        "risk_model_id": current.risk_model_id if current is not None else None,
+        "fit_calendar_id": current.fit_calendar_id if current is not None else "",
         "available": available,
         "production_eligible": available,
         "reason": None if available else "common_oos_decision_evidence_unavailable",
@@ -433,9 +463,9 @@ def _select_common_oos_decision(
     }
     return MultivariateDecision(
         objective=objective,
-        winning_candidate_id=str(winner.get("configuration_id", "unavailable")),
-        requested_method=str(winner.get("method", "unavailable")),
-        actual_method=str(winner.get("method", "unavailable")),
+        winning_candidate_id=current.candidate_id if available and current is not None else "unavailable",
+        requested_method=str(winner.get("method", "unavailable")) if available else "unavailable",
+        actual_method=str(winner.get("method", "unavailable")) if available else "unavailable",
         available=available, production_eligible=available,
         reason=None if available else "common_oos_decision_evidence_unavailable",
         document=document,
