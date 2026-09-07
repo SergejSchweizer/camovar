@@ -37,7 +37,7 @@ from portfell.portfolio_parts.solvers import (
     solve_minimum_variance,
 )
 
-CANDIDATE_CONTRACT = ContractVersion("multivariate.candidates", 8)
+CANDIDATE_CONTRACT = ContractVersion("multivariate.candidates", 9)
 MAX_WALK_FORWARD_SOLVER_ITERATIONS = 500
 # The solver's projected-gradient step includes a capped-simplex projection;
 # the old 100k limit made each of up to 24 walk-forward refits effectively
@@ -116,6 +116,9 @@ class PortfolioCandidate:
     max_drawdown: float | None = None
     diversification_ratio: float | None = None
     risk_contributions: tuple[RiskContribution, ...] = ()
+    # Stable semantic lineage is separate from fit-specific candidate_id.
+    candidate_configuration_id: str = ""
+    risk_model_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -265,6 +268,25 @@ def _candidate(
         max_drawdown=metrics.max_drawdown,
         diversification_ratio=metrics.diversification_ratio,
         risk_contributions=metrics.risk_contributions,
+        candidate_configuration_id=_configuration_id(method, policy, risk_model),
+        risk_model_id=risk_model.risk_model_id,
+    )
+
+
+def _configuration_id(
+    method: str,
+    policy: MonthlyDistributionEtfPortfolioPolicy,
+    risk_model: MultivariateRiskModelArtifact,
+) -> str:
+    """Stable allocator/design identity; fitted IDs and weights are excluded."""
+    return stable_contract_id(
+        "multivariate_candidate_configuration",
+        {
+            "method": method,
+            "policy": policy.to_row(),
+            "estimator": risk_model.estimator,
+            "window_policy": risk_model.window_policy,
+        },
     )
 
 
@@ -419,6 +441,8 @@ def _unavailable(
         None,
         None,
         None,
+        candidate_configuration_id=_configuration_id(method, policy, risk_model),
+        risk_model_id=risk_model.risk_model_id,
     )
 
 

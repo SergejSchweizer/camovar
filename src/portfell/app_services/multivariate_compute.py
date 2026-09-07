@@ -43,7 +43,7 @@ from portfell.multivariate_validation import (
 from portfell.return_series import build_returns
 from portfell.table_io import JsonRow
 
-MULTIVARIATE_EXECUTION_VERSION = "multivariate_execution.clean.v2"
+MULTIVARIATE_EXECUTION_VERSION = "multivariate_execution.clean.v4"
 MULTIVARIATE_PHASES = (
     "inputs",
     "risk_model_and_candidates",
@@ -245,6 +245,8 @@ def compute_multivariate(
     risk_contributions = [
         {
             "candidate_id": candidate.candidate_id,
+            "candidate_configuration_id": candidate.candidate_configuration_id,
+            "risk_model_id": candidate.risk_model_id,
             "method": candidate.method,
             "isin": contribution.listing.isin,
             "exchange": contribution.listing.exchange,
@@ -450,6 +452,8 @@ def _objective_score(
 def _candidate_row(item: PortfolioCandidate) -> JsonRow:
     return {
         "candidate_id": item.candidate_id,
+        "candidate_configuration_id": item.candidate_configuration_id,
+        "risk_model_id": item.risk_model_id,
         "method": item.method,
         "baseline": item.baseline,
         "status": item.status,

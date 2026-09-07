@@ -114,6 +114,8 @@ def test_candidate_set_has_stable_methods_and_no_silent_fallbacks() -> None:
     assert candidates[0].baseline and candidates[1].baseline
     assert all(candidate.status in {"feasible", "unavailable"} for candidate in candidates)
     for candidate in candidates:
+        assert candidate.candidate_configuration_id
+        assert candidate.risk_model_id == _risk_model().risk_model_id
         if candidate.status == "feasible":
             assert abs(sum(weight for _, weight in candidate.weights) - 1) < 1e-9
             assert all(0 <= weight <= 0.2 for _, weight in candidate.weights)
@@ -137,6 +139,16 @@ def test_candidate_set_has_stable_methods_and_no_silent_fallbacks() -> None:
             )
 
 
+def test_refits_share_configuration_identity_but_keep_fit_identity_distinct() -> None:
+    first = build_candidate_set(
+        snapshot=_snapshot(), risk_model=_risk_model(), return_rows=_returns(), income={}
+    )
+    second = build_candidate_set(
+        snapshot=_snapshot(), risk_model=_risk_model(), return_rows=_returns(), income={}
+    )
+    assert [item.candidate_configuration_id for item in first] == [
+        item.candidate_configuration_id for item in second
+    ]
 def test_candidate_realized_returns_match_weighted_simple_return_performance() -> None:
     rows = [
         {

@@ -13,7 +13,7 @@ from portfell.contract_versioning import ContractVersion, stable_contract_id
 from portfell.multivariate_candidates import PortfolioCandidate
 from portfell.multivariate_inputs import MultivariateListingKey
 
-VALIDATION_CONTRACT = ContractVersion("multivariate.validation", 6)
+VALIDATION_CONTRACT = ContractVersion("multivariate.validation", 7)
 CandidateFactory = Callable[[Sequence[Mapping[str, Any]]], Sequence[PortfolioCandidate]]
 
 
@@ -117,6 +117,7 @@ class ValidationSplit:
     herfindahl_index: float | None = None
     income_available: bool = False
     test_observation_count: int = 0
+    candidate_configuration_id: str = ""
 
 
 def walk_forward_validation_row(item: ValidationSplit) -> dict[str, Any]:
@@ -145,6 +146,7 @@ class ValidationScenario:
     conditional_value_at_risk: float | None
     status: str
     reason: str | None
+    candidate_configuration_id: str = ""
 
 
 @dataclass(frozen=True)
@@ -260,7 +262,7 @@ def validate_candidates(
                     turnover=turnover,
                     weights=candidate.weights,
                     requested_method=requested.method,
-                    risk_model_id=risk_model_id,
+                    risk_model_id=candidate.risk_model_id or risk_model_id,
                     sharpe_ratio=sharpe,
                     sortino_ratio=sortino,
                     conditional_value_at_risk=cvar,
@@ -268,6 +270,7 @@ def validate_candidates(
                     herfindahl_index=candidate.herfindahl_index,
                     income_available=candidate.gross_ttm_distribution_yield is not None,
                     test_observation_count=len(test),
+                    candidate_configuration_id=candidate.candidate_configuration_id,
                 )
             )
     if precomputed_candidates is not None and refit_index != len(precomputed_candidates):
@@ -506,6 +509,7 @@ def _scenario(
         conditional_value_at_risk=cvar,
         status="complete" if reason is None else "available_with_warning",
         reason=reason,
+        candidate_configuration_id=candidate.candidate_configuration_id,
     )
 
 
@@ -526,6 +530,7 @@ def _unavailable_scenario(
         conditional_value_at_risk=None,
         status="unavailable",
         reason=reason,
+        candidate_configuration_id=candidate.candidate_configuration_id,
     )
 
 
@@ -574,6 +579,7 @@ def _unavailable(candidate: PortfolioCandidate, reason: str) -> ValidationSplit:
         "unavailable",
         reason,
         candidate.candidate_id,
+        candidate_configuration_id=candidate.candidate_configuration_id,
     )
 
 

@@ -36,7 +36,7 @@ class Service:
             "run_id": run_id,
             "status": "succeeded",
             "input_snapshot_id": "market_source_snapshot_123456",
-            "algorithm_version": "multivariate_execution.clean.v2",
+            "algorithm_version": "multivariate_execution.clean.v4",
             "decision": {
                 "objective": "return_risk",
                 "winning_candidate_id": "candidate-1",

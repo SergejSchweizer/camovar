@@ -28,7 +28,7 @@ def _build(
         commit_sha=commit_sha,
         contract_versions=contract_versions
         or {
-            "candidate": "multivariate.candidates@v8",
+            "candidate": "multivariate.candidates@v9",
             "risk_model": "multivariate.risk_model@v1",
             "structure": "multivariate.structure@v3",
             "candidate_structure": "multivariate.candidate_structure@v2",
