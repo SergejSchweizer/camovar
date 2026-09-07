@@ -246,8 +246,9 @@ def compute_multivariate(
     if on_phase is not None and phase < 5:
         on_phase(4, MULTIVARIATE_PHASES[3])
         on_phase(5, MULTIVARIATE_PHASES[4])
-    decision = _select_decision(objective=objective, candidates=candidates, scorecards=scorecards,
-                                splits=validation, scenarios=scenarios)
+    decision = _select_common_oos_decision(
+        objective=objective, risk_model_comparison=risk_model_comparison,
+    )
     state.update({"phase": 6, "decision": decision})
     if save_checkpoint is not None:
         save_checkpoint(6, MULTIVARIATE_PHASES[5], state)
@@ -285,9 +286,15 @@ def compute_multivariate(
     ]
     income_rows = [_income_row(key, evidence) for key, evidence in sorted(income.items())]
     validation_rows = (
-        [{"evidence_role": "selection", **walk_forward_validation_row(item)} for item in validation]
-        + [{"kind": "stress", "evidence_role": "selection", **asdict(item)} for item in scenarios]
-        + [{"kind": "scorecard", "evidence_role": "selection", **asdict(item)} for item in scorecards]
+        [{"evidence_role": "descriptive", **walk_forward_validation_row(item)} for item in validation]
+        + [{"kind": "stress", "evidence_role": "descriptive", **asdict(item)} for item in scenarios]
+        + [{"kind": "scorecard", "evidence_role": "descriptive", **asdict(item)} for item in scorecards]
+        + [{"kind": "common_oos_validation", "evidence_role": "selection", **row}
+           for row in risk_model_comparison.get("common_oos_validation", [])]
+        + [{"kind": "configuration_scorecard", "evidence_role": "selection", **row}
+           for row in risk_model_comparison.get("configuration_scorecards", [])]
+        + [{"kind": "configuration_ranking", "evidence_role": "selection", **row}
+           for row in risk_model_comparison.get("configuration_rankings", {}).get(objective, [])]
     )
     documents: dict[str, JsonRow] = {
         "summary": {
@@ -373,6 +380,65 @@ def compute_multivariate(
         algorithm_version=MULTIVARIATE_EXECUTION_VERSION,
         documents=documents,
         decision=decision,
+    )
+
+
+def _select_common_oos_decision(
+    *, objective: str, risk_model_comparison: Mapping[str, Any],
+) -> MultivariateDecision:
+    """Select only from persisted configuration-keyed common-OOS rankings."""
+    rankings = risk_model_comparison.get("configuration_rankings", {})
+    ordered = tuple(rankings.get(objective, ()))
+    if not ordered:
+        document: JsonRow = {
+            "contract_version": DECISION_CONTRACT.qualified_name,
+            "objective": objective,
+            "available": False,
+            "production_eligible": False,
+            "reason": "common_oos_decision_evidence_unavailable",
+            "ranking_basis": "common_oos_14_configuration_only",
+            "selection_authority": "common_oos_14_config",
+        }
+        return MultivariateDecision(
+            objective=objective, winning_candidate_id="unavailable",
+            requested_method="unavailable", actual_method="unavailable",
+            available=False, production_eligible=False,
+            reason="common_oos_decision_evidence_unavailable", document=document,
+        )
+    winner = ordered[0]
+    available = int(winner.get("completed_split_count", 0)) >= 2
+    document = {
+        "contract_version": DECISION_CONTRACT.qualified_name,
+        "objective": objective,
+        "objective_metric": "median_sharpe_ratio" if objective == "return_risk" else (
+            "median_return_drawdown_ratio" if objective == "return_drawdown" else "minimum_volatility"
+        ),
+        "winning_candidate_id": winner.get("configuration_id", "unavailable"),
+        "winning_configuration_id": winner.get("configuration_id", "unavailable"),
+        "requested_method": winner.get("method", "unavailable"),
+        "actual_method": winner.get("method", "unavailable"),
+        "risk_model_spec_key": winner.get("spec_key", ""),
+        "risk_model_spec_id": winner.get("risk_model_spec_id", ""),
+        "available": available,
+        "production_eligible": available,
+        "reason": None if available else "common_oos_decision_evidence_unavailable",
+        "ranking_basis": "common_oos_14_configuration_only",
+        "selection_authority": "common_oos_14_config",
+        "objective_score": winner.get("objective_score"),
+        "comparison_split_count": winner.get("completed_split_count", 0),
+        "median_turnover": winner.get("median_turnover"),
+        "median_herfindahl_index": winner.get("median_herfindahl_index"),
+        "tie_break": "median_turnover_ascending_then_median_hhi_ascending_then_configuration_id_ascending",
+        "full_history_evidence_role": "descriptive_non_selection",
+    }
+    return MultivariateDecision(
+        objective=objective,
+        winning_candidate_id=str(winner.get("configuration_id", "unavailable")),
+        requested_method=str(winner.get("method", "unavailable")),
+        actual_method=str(winner.get("method", "unavailable")),
+        available=available, production_eligible=available,
+        reason=None if available else "common_oos_decision_evidence_unavailable",
+        document=document,
     )
 
 

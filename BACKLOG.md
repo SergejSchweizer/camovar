@@ -886,8 +886,10 @@ evidence is integrated on `main` at `87e6ba4`.
 PR469 status: configuration-keyed common-OOS scorecards, deterministic
 objective ranking evidence and tests are integrated on `main` at `bf7c74e`.
 PR470 status: independent objective-ranking, incomplete-evidence and warning
-QA with sanitized stage-5 evidence is prepared on the QA branch; merge it
-before beginning PR471.
+QA with sanitized stage-5 evidence is integrated on `main` at `df2cf76`.
+PR471 status: common-OOS 14-configuration Decision authority cutover and
+authority tests are prepared on the implementation branch; merge before
+beginning PR472.
 
 ### Corrective migration execution index (PR461–PR480)
 
