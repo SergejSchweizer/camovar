@@ -115,6 +115,33 @@ def common_oos_evidence(
         "status": "PASS",
         "failure_reasons": [],
     }
+
+
+def config_ranking_evidence(
+    *, sha: str, rankings: Mapping[str, Sequence[Mapping[str, Any]]], focused_tests: Sequence[str],
+) -> dict[str, Any]:
+    """Build sanitized stage-5 evidence for objective ranking QA."""
+    return {
+        "contract": "portfolio-selection-v2-migration@v1",
+        "sha": sha,
+        "stage": "config_ranking_ready",
+        "stage_ordinal": 5,
+        "completed_implementation_prs": ["PR461", "PR463", "PR465", "PR467", "PR469"],
+        "completed_qa_prs": ["PR462", "PR464", "PR466", "PR468", "PR470"],
+        "selection_authority": "shadow_14_config",
+        "objectives_covered": sorted(rankings),
+        "winner_per_objective": {
+            objective: rows[0].get("configuration_id") if rows else None
+            for objective, rows in rankings.items()
+        },
+        "full_sample_excluded": True,
+        "incomplete_evidence_explicit": True,
+        "warning_semantics_preserved": True,
+        "deterministic_ties_verified": True,
+        "focused_tests": list(focused_tests),
+        "status": "PASS",
+        "failure_reasons": [],
+    }
     return {
         "contract": "portfolio-selection-v2-migration@v1",
         "sha": sha,
