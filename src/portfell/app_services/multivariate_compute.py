@@ -43,7 +43,7 @@ from portfell.multivariate_validation import (
 from portfell.return_series import build_returns
 from portfell.table_io import JsonRow
 
-MULTIVARIATE_EXECUTION_VERSION = "multivariate_execution.clean.v8"
+MULTIVARIATE_EXECUTION_VERSION = "multivariate_execution.clean.v9"
 MULTIVARIATE_PHASES = (
     "inputs",
     "risk_model_and_candidates",
@@ -442,19 +442,9 @@ def _objective_score(
     volatility = scorecard.median_volatility
     if objective == "minimum_risk":
         return None if volatility is None else -volatility
-    if scorecard.median_post_cost_return is None:
-        return None
-    drawdowns = [
-        abs(item.max_drawdown)
-        for item in splits
-        if item.candidate_id == scorecard.candidate_id
-        and item.status == "complete"
-        and item.max_drawdown is not None
-    ]
-    if not drawdowns:
-        return None
-    denominator = median(drawdowns)
-    return None if denominator <= 0 else scorecard.median_post_cost_return / denominator
+    if objective == "return_drawdown":
+        return scorecard.median_return_drawdown_ratio
+    return None
 
 
 def _candidate_row(item: PortfolioCandidate) -> JsonRow:

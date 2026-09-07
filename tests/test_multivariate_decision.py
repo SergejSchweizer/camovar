@@ -17,3 +17,11 @@ def test_return_risk_objective_uses_persisted_median_oos_sharpe() -> None:
         median_sharpe_ratio=1.25,
     )
     assert _objective_score("return_risk", scorecard, ()) == 1.25
+
+
+def test_return_drawdown_objective_uses_persisted_same_split_ratio() -> None:
+    scorecard = CandidateScorecard(
+        "candidate-1", "equal_weight", 4, 0.2, -0.1, 0.4, 4, (),
+        median_return_drawdown_ratio=0.75,
+    )
+    assert _objective_score("return_drawdown", scorecard, ()) == 0.75
