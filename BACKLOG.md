@@ -868,8 +868,9 @@ must be completed linearly before Selection v2 can be declared final.
 
 PR461 status: integrated on `main` at `54aaf50`; the immutable 252/21/8/2
 comparison policy and exact 14 semantic configuration definitions are available.
-PR462 status: implementation and independent stage-1 evidence are prepared in
-the current worktree; the QA branch must be merged before PR463 begins.
+PR462 status: integrated on `main` at `3e1bfbb`; independent stage-1
+comparison-contract evidence is recorded in `tests/migration_evidence.py` and
+covered by `tests/test_pr462_selection_v2_comparison_contract_qa.py`.
 - Multivariate readiness requires matching current Selection + Bivariate lineage;
 - no manual allocator/spec/winner selector exists in production workflow;
 - UI clearly separates `Selection Evidence` from `Portfolio Diagnostics`;
