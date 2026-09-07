@@ -876,7 +876,9 @@ risk-model bundles persist fit identities and explicit unavailable fits.
 PR464 status: integrated on `main` at `cee1463`; independent numerical,
 leakage and fit-count QA evidence is recorded in the migration test suite.
 PR465 status: exact 14-slot split-local candidate families and identity tests
-are prepared on the implementation branch; merge before beginning PR466.
+are integrated on `main` at `0992c1c`.
+PR466 status: independent 14-slot identity/completeness QA evidence is
+prepared on the QA branch; merge it before beginning PR467.
 
 ### Corrective migration execution index (PR461–PR480)
 
