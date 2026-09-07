@@ -21,10 +21,10 @@ Market observations are consumed through the current market-data gateway. Multiv
 Current Multivariate baseline at the review SHA:
 
 - `multivariate.candidates@v9`;
-- `multivariate.validation@v10`;
+- `multivariate.validation@v11`;
 - `multivariate.risk_model@v1`;
 - `multivariate.structural_walk_forward@v1`;
-- `MULTIVARIATE_EXECUTION_VERSION = multivariate_execution.clean.v10`;
+- `MULTIVARIATE_EXECUTION_VERSION = multivariate_execution.clean.v11`;
 - production covariance estimator is Ledoit-Wolf with `window_policy=full`;
 - production candidate methods are `equal_weight`, `inverse_volatility`, `minimum_variance`, `equal_risk_contribution`, `hierarchical_risk_parity`, `minimum_cvar`;
 - walk-forward policy is minimum training 100 observations, test window 21 observations, maximum 8 refits, minimum 2 completed splits, transaction-cost rate 0.0005;
@@ -457,6 +457,8 @@ Owned paths: `src/portfell/multivariate_validation.py`, stress tests, execution-
 Task: return-path scenarios become exactly `historical`, `seeded_block_bootstrap`, `distribution_cut`. Delete current transformations that scale/deform already aggregated portfolio returns; do not rename them.
 
 Acceptance: persisted return scenarios contain exactly those names; validation `v10 -> v11`; execution `clean.v10 -> clean.v11`.
+
+Git status: integrated on `main` at `4ead99f`; persisted return-path scenarios are now limited to historical, seeded block bootstrap and distribution cut, with validation and execution contracts synchronized to v11.
 
 ### PR449 — Add true 25% volatility-up asset-level risk stress
 
