@@ -121,7 +121,7 @@ def build_candidate_report(
     data_quality_warnings: Sequence[str] = (),
 ) -> CandidateReport:
     """Build one candidate's explanation from `portfell.profiles.evaluate_profile_candidate`
-    output plus optional `portfell.scorecard`/`portfell.stress` traceability and an
+    output plus optional stress traceability and an
     optional current-portfolio comparison. Never recomputes weights or
     optimizer diagnostics; only explains what upstream modules already produced.
     """

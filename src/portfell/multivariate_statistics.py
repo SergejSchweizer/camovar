@@ -51,7 +51,6 @@ from portfell.recommendation import (
 )
 from portfell.return_quality import evaluate_quote_quality
 from portfell.risk_model import estimate_risk_model
-from portfell.scorecard import ScorecardCandidate, build_model_comparison_scorecard
 from portfell.statistics_views import DEFAULT_BIVARIATE_VERSION, read_selection_statistics
 from portfell.stress import (
     block_bootstrap_scenarios,
@@ -749,15 +748,6 @@ def write_production_multivariate_statistics(
 
 
 # Profiles whose single underlying objective is compatible with
-# portfell.scorecard's walk-forward comparison (optimize_portfolio's
-# GRID_OBJECTIVES/solver-backed objectives). Defensive (shrinkage Minimum
-# Variance), Income (Minimum CVaR), and Balanced (a multi-objective
-# ensemble) are not single walk-forward-compatible objectives today; their
-# scorecard traceability is reported as unavailable (None) rather than
-# fabricated or silently skipped.
-_SCORECARD_COMPATIBLE_OBJECTIVES: dict[str, str] = {"growth": "equal_risk_contribution"}
-
-
 @dataclass(frozen=True)
 class MultivariateRecommendationConfig:
     """Configuration for one PR71 recommendation run over a production adapter result."""
@@ -783,9 +773,8 @@ def write_multivariate_recommendation(
     """Produce an explainable recommendation report for the selected membership.
 
     Runs the PR70 production adapter first (which enforces every production
-    gate and writes profile weight rows), then adds PR64 walk-forward
-    scorecard traceability (where a profile's objective is scorecard
-    compatible) and PR65 stress/sensitivity summaries for every profile
+    gate and writes profile weight rows), then adds stress/sensitivity
+    summaries for every profile
     candidate, and finally compares candidates via PR66's
     `portfell.recommendation` into one deterministic report.
 
@@ -809,20 +798,9 @@ def write_multivariate_recommendation(
         profile = _PROFILE_BUILDERS[profile_name](max_weight=max_weight)
         candidate = evaluate_profile_candidate(profile, listings, covariance_rows, matrix)
 
+        # Legacy standalone scorecard ranking was removed by PR447. Canonical
+        # OOS scorecards are produced by the Multivariate application service.
         scorecard_row: JsonRow | None = None
-        objective = _SCORECARD_COMPATIBLE_OBJECTIVES.get(profile_name)
-        if objective is not None:
-            scorecard_rows = build_model_comparison_scorecard(
-                matrix,
-                run_id=f"{production_config.evaluation_id}-scorecard",
-                evaluation_id=production_config.evaluation_id,
-                candidates=[ScorecardCandidate(profile_name, objective, profile.constraints)],
-                train_window=resolved_config.scorecard_train_window,
-                test_window=resolved_config.scorecard_test_window,
-                mode=resolved_config.scorecard_mode,
-                profile=resolved_config.scorecard_profile,
-            )
-            scorecard_row = scorecard_rows[0]
 
         sensitivity_summary: JsonRow | None = None
         if candidate["weights"]:

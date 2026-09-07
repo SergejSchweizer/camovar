@@ -93,7 +93,7 @@ def test_write_multivariate_recommendation_produces_a_full_report(tmp_path: Path
         assert candidate["cost_quality"] == UNAVAILABLE
 
 
-def test_write_multivariate_recommendation_scores_growth_via_scorecard(tmp_path: Path) -> None:
+def test_write_multivariate_recommendation_does_not_use_legacy_scorecard(tmp_path: Path) -> None:
     paths = LakePaths(root=tmp_path / "lake")
     selected_rows = _write_selection(paths, _FIVE_LISTINGS)
 
@@ -101,7 +101,7 @@ def test_write_multivariate_recommendation_scores_growth_via_scorecard(tmp_path:
 
     growth = next(c for c in report["candidates"] if c["profile_name"] == "growth")
     defensive = next(c for c in report["candidates"] if c["profile_name"] == "defensive")
-    assert growth["scorecard_rank"] == 1
+    assert growth["scorecard_rank"] is None
     assert defensive["scorecard_rank"] is None
 
 
