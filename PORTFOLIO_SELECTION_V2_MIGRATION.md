@@ -1,6 +1,8 @@
 # Portfolio Selection v2 corrective migration
 
-Status: executable corrective plan.
+Status: complete. PR461–PR480 are integrated; the final sanitized closeout
+evidence is published on runtime commit
+`5bd6200c66c9cd3f863f7dbfab90122ad3c47b73`.
 
 This document supersedes completion claims for the Portfolio Selection v2 migration where current production code does not yet satisfy the frozen PR454-PR459 semantics. Historical backlog entries remain audit history; the executable corrective sequence is PR461-PR480 below.
 
