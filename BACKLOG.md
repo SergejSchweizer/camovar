@@ -950,8 +950,10 @@ persisted ranking read-model rendering are integrated on `main` at `d5516ea`.
 PR478 status: browser/read-model QA for all objectives, stale readiness,
 winner diagnostics and console safety is integrated on `main` at `1806261`.
 PR479 status: legacy ranking code retirement, production-authority search and
-contract synchronization are prepared on the implementation branch; merge
-before beginning PR480.
+contract synchronization are integrated on `main` at `ea50cd1`.
+PR480 status: final independent closeout evidence and the repaired migration
+evidence assembler are integrated on `main` at `5bd6200`; the closeout suite
+emits a sanitized `portfolio-selection-v2-migration@v1` PASS/FAIL artifact.
 
 ### Corrective migration execution index (PR461–PR480)
 
