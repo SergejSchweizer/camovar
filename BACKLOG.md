@@ -19,6 +19,10 @@ agents must not assume that the GitHub number equals the work-order identifier.
 
 ## 1. Current production architecture — frozen baseline
 
+The detailed version values in the historical baseline below describe the
+pre-PR460 runtime. The current Selection v2 runtime and its authority are
+defined by the completed PR461–PR480 migration in section 6.
+
 Portfell is a single-user Python application with exactly one Application container plus PostgreSQL. Plotly Dash exposes exactly four analytical pages: `/metadata`, `/univariate`, `/bivariate`, `/multivariate`. Internal module boundaries remain explicit but are composed in one process.
 
 Market observations are consumed through the current market-data gateway. Multivariate derives returns from the quote rows supplied by that gateway; no PostgreSQL daily-return fallback may be reintroduced.
